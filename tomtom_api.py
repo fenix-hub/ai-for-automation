@@ -26,6 +26,7 @@ class Client:
                 summary = data["routes"][0]["summary"]
                 summary["points"] = data["routes"][0]["legs"][0]["points"]
                 return summary
+        raise Exception(f"{response.status_code} - {response.text}")
         return None        
 
 
