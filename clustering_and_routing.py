@@ -253,6 +253,18 @@ with open(centroids_file, mode='w', newline='') as file:
     for i, (lon, lat) in enumerate(geographic_centroids):
         writer.writerow([i, lat, lon])
 
+# Salvataggio di tutti gli edges
+edges_file = 'edges.csv'
+with open(edges_file, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Edge ID', 'From Junction', 'To Junction', 'From Cluster', 'To Cluster', 'From Lat', 'From Lon', 'To Lat', 'To Lon'])
+    for edge in edges:
+        from_id = junction_ids[np.where((coords == edge['from']).all(axis=1))[0][0]]
+        to_id = junction_ids[np.where((coords == edge['to']).all(axis=1))[0][0]]
+        from_lon, from_lat = net.convertXY2LonLat(edge['from'][0], edge['from'][1])
+        to_lon, to_lat = net.convertXY2LonLat(edge['to'][0], edge['to'][1])
+        writer.writerow([edge['id'], from_id, to_id, edge['from_cluster'], edge['to_cluster'], from_lat, from_lon, to_lat, to_lon])
+        
 # Salvataggio degli edges di frontiera (interna) in un file CSV
 border_edges_file = 'border_edges.csv'
 with open(border_edges_file, mode='w', newline='') as file:

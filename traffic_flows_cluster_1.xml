@@ -1,5 +1,5 @@
 <routes>
-  <flow id="flow_1_0" from="116075832#1" to="-116595640#0" begin="0" end="3600" number="100"/>
+  <flow id="flow_1_0" from="116075832#1" to="-116595640#0" begin="0" end="60 * 60 * 6" number="100"/>
   <flow id="flow_1_1" from="116075832#1" to="-221458767#0" begin="0" end="3600" number="100"/>
   <flow id="flow_1_2" from="116075832#1" to="116075830#8" begin="0" end="3600" number="100"/>
   <flow id="flow_1_3" from="116075832#1" to="116075832#0" begin="0" end="3600" number="100"/>

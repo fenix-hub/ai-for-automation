@@ -1,0 +1,5 @@
+19 08 2024
+
+sumo per ogni traffic flow istanzia il numero di veicoli definito dal flusso stesso.
+se più flussi hanno uno stesso edge in comune, su quell'edge verrà istanziato un numero di veicoli pari alla somma di tutti i veicoli presenti su tutti i flussi che hanno quell edge in comune.
+come soluzione abbiamo pensato di dividere il numero di veicoli sul flusso per il numero di volte in cui uno stesso edge è utilizzato in un flusso
