@@ -48,19 +48,21 @@ def extract_flow_coordinates_to_csv(xml_file_path, csv_file_path, output_csv_pat
             "flow_id": flow_id,
             #"from_edge": from_edge, #Edge ID
             #FLOW START
-            "from_edge_from_lat": from_coords["from_lat"] if from_coords else None,
-            "from_edge_from_lon": from_coords["from_lon"] if from_coords else None,
+            "start_point_lat": from_coords["from_lat"] if from_coords else None,
+            "start_point_lon": from_coords["from_lon"] if from_coords else None,
             
             #FLOW VIA-POINTS
-            "from_edge_to_lat": from_coords["to_lat"] if from_coords else None,
-            "from_edge_to_lon": from_coords["to_lon"] if from_coords else None,
+            #fine del primo edge (to_lat, to_lon)
+            "via_point_1_lat": from_coords["to_lat"] if from_coords else None,
+            "via_point_1_lon": from_coords["to_lon"] if from_coords else None,
             #"to_edge": to_edge, #Edge ID
-            "to_edge_from_lat": to_coords["from_lat"] if to_coords else None,
-            "to_edge_from_lon": to_coords["from_lon"] if to_coords else None,
+            #inizio del secondo edge (from_lat, from_lon)
+            "via_point_2_lat": to_coords["from_lat"] if to_coords else None,
+            "via_point_2_lon": to_coords["from_lon"] if to_coords else None,
             
             #FLOW END
-            "to_edge_to_lat": to_coords["to_lat"] if to_coords else None,
-            "to_edge_to_lon": to_coords["to_lon"] if to_coords else None
+            "end_point_lat": to_coords["to_lat"] if to_coords else None,
+            "end_point_lon": to_coords["to_lon"] if to_coords else None
         })
 
     # Convertire i dati in DataFrame e salvarli come CSV
