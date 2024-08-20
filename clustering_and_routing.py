@@ -149,7 +149,7 @@ def plot_clusters_and_edges(junctions, labels, edges, centroids, geographic_cent
 ## -------------------EXECUTION----------------------- ##
 # Caricamento file di rete SUMO
 sumo_network_file = 'massafra_map.net.xml'
-tree, root, coords, junction_ids = load_map(sumo_network_file)
+tree, root, coords, junction_ids = load_map(sumo_network_file) 
 net = sumolib.net.readNet(sumo_network_file)
 
 # Dati di custering 
@@ -172,9 +172,9 @@ extreme_junction_ids = [junction_ids[idx] for idx in extreme_coords_indices]
 # Identifica tutte le junction con un solo collegamento (per ipotesi ai limiti della mappa, con una sola connessione)
 border_junction_connections = find_border_junctions(root)
 
-# Estrazione dati degli edges che collegano cluster diversi (e degli edges interi ad un cluster)
-edges = []
-border_edges = []
+# Estrazione dati degli edges che collegano cluster diversi (e degli edges interni ad un cluster)
+edges = [] #Vettore di tutti gli edges contenuti nella mappa
+border_edges = [] 
 for edge in root.findall('.//edge'):
     from_junction = edge.get('from')
     to_junction = edge.get('to')
