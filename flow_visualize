@@ -1,0 +1,47 @@
+import pandas as pd
+import folium
+
+# Funzione per creare una mappa basata su flow_id
+def crea_mappa(flow_id, csv_file):
+    # Carica il file CSV
+    df = pd.read_csv(csv_file)
+    
+    # Filtra i dati per il flow_id specificato
+    flow_data = df[df['flow_id'] == flow_id]
+    
+    if flow_data.empty:
+        print(f"Flow ID {flow_id} non trovato.")
+        return None
+
+    # Estrai le coordinate
+    start_point = (flow_data['start_point_lat'].values[0], flow_data['start_point_lon'].values[0])
+    via_point_1 = (flow_data['via_point_1_lat'].values[0], flow_data['via_point_1_lon'].values[0])
+    via_point_2 = (flow_data['via_point_2_lat'].values[0], flow_data['via_point_2_lon'].values[0])
+    end_point = (flow_data['end_point_lat'].values[0], flow_data['end_point_lon'].values[0])
+    
+    # Crea la mappa centrata sul punto di partenza
+    m = folium.Map(location=start_point, zoom_start=18)
+    
+    # Aggiungi marker per start, via points, e end point
+    folium.Marker(start_point, popup="Start Point", icon=folium.Icon(color="green")).add_to(m)
+    folium.Marker(via_point_1, popup="Via Point 1", icon=folium.Icon(color="blue")).add_to(m)
+    folium.Marker(via_point_2, popup="Via Point 2", icon=folium.Icon(color="blue")).add_to(m)
+    folium.Marker(end_point, popup="End Point", icon=folium.Icon(color="red")).add_to(m)
+    
+    # Disegna linee che collegano i punti
+    folium.PolyLine([start_point, via_point_1, via_point_2, end_point], color="blue", weight=2.5, opacity=1).add_to(m)
+    
+    # Salva la mappa come file HTML
+    map_path = f'{flow_id}.html'
+    m.save(map_path)
+    
+    return map_path
+
+# Esempio di utilizzo
+csv_file = 'output_flows_with_coordinates.csv'  # Percorso del file CSV
+flow_id = 'flow_1_0'  # Esempio di flow_id
+
+# Crea la mappa per il flow_id specificato
+map_path = crea_mappa(flow_id, csv_file)
+
+map_path

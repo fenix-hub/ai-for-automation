@@ -242,11 +242,11 @@ for edge in root.findall('.//edge'):
 generate_traffic_flows_per_cluster(edges_by_cluster, net)
 
 # Visualizza la mappa con i cluster, i centroidi, gli edge di frontiera e tutti gli edge ai margini della mappa per ciascun cluster
-output_file = 'clustered_map_1.png'
+output_file = 'clustered_map.png'
 plot_clusters_and_edges(coords, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)
 
 # Salvataggio dei centroidi in un file CSV
-centroids_file = 'centroids_1.csv'
+centroids_file = 'centroids.csv'
 with open(centroids_file, mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['Cluster', 'Latitudine', 'Longitudine'])
