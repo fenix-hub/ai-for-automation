@@ -1,47 +1,60 @@
 import pandas as pd
 import folium
+import requests
+import os
+# Leggiamo il CSV
+df = pd.read_csv('output_flows_with_coordinates.csv')
 
-# Funzione per creare una mappa basata su flow_id
-def crea_mappa(flow_id, csv_file):
-    # Carica il file CSV
-    df = pd.read_csv(csv_file)
+# Funzione per generare la mappa con il percorso basato su flow_id
+def visualizza_percorso(flow_id):
+    # Filtriamo il dataframe per il flow_id scelto
+    flow = df[df['flow_id'] == flow_id].iloc[0]
     
-    # Filtra i dati per il flow_id specificato
-    flow_data = df[df['flow_id'] == flow_id]
+    # Otteniamo le coordinate dal flow selezionato
+    start = [flow['start_point_lat'], flow['start_point_lon']]
+    via_1 = [flow['via_point_1_lat'], flow['via_point_1_lon']]
+    via_2 = [flow['via_point_2_lat'], flow['via_point_2_lon']]
+    end = [flow['end_point_lat'], flow['end_point_lon']]
     
-    if flow_data.empty:
-        print(f"Flow ID {flow_id} non trovato.")
-        return None
+    # Creiamo la mappa centrata sul punto di partenza
+    mappa = folium.Map(location=start, zoom_start=17)
+    
+    # Definiamo le coordinate come stringa per la richiesta a OSRM
+    coords = f"{start[1]},{start[0]};{via_1[1]},{via_1[0]};{via_2[1]},{via_2[0]};{end[1]},{end[0]}"
+    
+    # Chiediamo a OSRM il percorso usando il profilo di guida
+    url = f"http://router.project-osrm.org/route/v1/driving/{coords}?overview=full&geometries=geojson"
+    
+    # Facciamo la richiesta e otteniamo il percorso
+    response = requests.get(url)
+    data = response.json()
+    
+    # Otteniamo le coordinate del percorso
+    route_coords = data['routes'][0]['geometry']['coordinates']
+    
+    # Invertiamo le coordinate (OSRM restituisce lon, lat)
+    route_coords = [(coord[1], coord[0]) for coord in route_coords]
+    
+    # Tracciamo il percorso sulla mappa
+    folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.8).add_to(mappa)
+    
+    # Aggiungiamo i marker per i punti
+    folium.Marker(start, popup="Start", icon=folium.Icon(color="green")).add_to(mappa)
+    folium.Marker(via_1, popup="Via 1", icon=folium.Icon(color="blue")).add_to(mappa)
+    folium.Marker(via_2, popup="Via 2", icon=folium.Icon(color="blue")).add_to(mappa)
+    folium.Marker(end, popup="End", icon=folium.Icon(color="red")).add_to(mappa)
+    
+    
+    file_path = os.path.join('flow_maps', f"mappa_percorso_{flow_id}.html")
+    
+    # Salviamo la mappa come file HTML
+    mappa.save(file_path)
+    
+    return mappa
 
-    # Estrai le coordinate
-    start_point = (flow_data['start_point_lat'].values[0], flow_data['start_point_lon'].values[0])
-    via_point_1 = (flow_data['via_point_1_lat'].values[0], flow_data['via_point_1_lon'].values[0])
-    via_point_2 = (flow_data['via_point_2_lat'].values[0], flow_data['via_point_2_lon'].values[0])
-    end_point = (flow_data['end_point_lat'].values[0], flow_data['end_point_lon'].values[0])
-    
-    # Crea la mappa centrata sul punto di partenza
-    m = folium.Map(location=start_point, zoom_start=18)
-    
-    # Aggiungi marker per start, via points, e end point
-    folium.Marker(start_point, popup="Start Point", icon=folium.Icon(color="green")).add_to(m)
-    folium.Marker(via_point_1, popup="Via Point 1", icon=folium.Icon(color="blue")).add_to(m)
-    folium.Marker(via_point_2, popup="Via Point 2", icon=folium.Icon(color="blue")).add_to(m)
-    folium.Marker(end_point, popup="End Point", icon=folium.Icon(color="red")).add_to(m)
-    
-    # Disegna linee che collegano i punti
-    folium.PolyLine([start_point, via_point_1, via_point_2, end_point], color="blue", weight=2.5, opacity=1).add_to(m)
-    
-    # Salva la mappa come file HTML
-    map_path = f'{flow_id}.html'
-    m.save(map_path)
-    
-    return map_path
+# Eseguiamo la funzione per il flow desiderato
+flow_id = 'flow_1_7'  # Sostituisci con il flow_id che vuoi visualizzare
+mappa = visualizza_percorso(flow_id)
 
-# Esempio di utilizzo
-csv_file = 'output_flows_with_coordinates.csv'  # Percorso del file CSV
-flow_id = 'flow_1_0'  # Esempio di flow_id
-
-# Crea la mappa per il flow_id specificato
-map_path = crea_mappa(flow_id, csv_file)
-
-map_path
+# Mostriamo la mappa
+mappa
