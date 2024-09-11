@@ -45,8 +45,7 @@ def is_valid_route(from_edge, to_edge, net):
 # Funzione per generare i flussi di traffico e salvare ingressi e uscite (per ciascun cluster)
 def generate_traffic_flows_per_cluster(edges_by_cluster, net):
     for cluster_id, edges in edges_by_cluster.items():
-        with open(f'traffic_flows_cluster_{cluster_id}.xml', 'w') as flows_file:
-            flows_file.write('<routes>\n')
+        with open(f'traffic_flows_ref/traffic_flows_cluster_{cluster_id}_ref.csv', 'w') as flows_file:
             flow_id = 0
             
             # Estrarre gli edges di ingresso e uscita per ogni cluster cluster
@@ -73,10 +72,9 @@ def generate_traffic_flows_per_cluster(edges_by_cluster, net):
                         if ingress_cluster == egress_cluster == cluster_id:
                             if is_valid_route(net.getEdge(ingress["edge_id"]), net.getEdge(egress["edge_id"]), net):
                                 flow_id_str = f"{cluster_id}_{flow_id}"
-                                flows_file.write(f'  <flow id="flow_{flow_id_str}" from="{ingress["edge_id"]}" to="{egress["edge_id"]}" begin="0" end="3600" number="100"/>\n')
+                                flows_file.write(f'{flow_id_str},{ingress["edge_id"]},{egress["edge_id"]}\n')
                                 flow_id += 1
             
-            flows_file.write('</routes>')
 
 # Funzione per identificare junctions ai margini della mappa
 def find_border_junctions(root):
