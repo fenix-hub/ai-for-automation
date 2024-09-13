@@ -4,12 +4,12 @@ import csv
 import numpy as np
 
 # Caricamento file di rete SUMO
-sumo_network_file = 'massafra_map.net.xml'
+sumo_network_file = 'bari_map.net.xml'
 tree, root, coords, junction_ids = fn.load_map(sumo_network_file) 
 net = sumolib.net.readNet(sumo_network_file)
 
 # Dati di custering 
-num_clusters = 5  # Numero di cluster 
+num_clusters = 6  # Numero di cluster 
 labels, centroids = fn.cluster_junctions(coords, num_clusters)
 
 # Conversione coordinate SUMO - coordinate geografiche dei centoridi
@@ -95,7 +95,7 @@ for edge in root.findall('.//edge'):
             })
 
 # Genera i flussi di traffico per ogni cluster
-fn.generate_ingress_egress_per_cluster(edges_by_cluster,junction_clusters, net)
+fn.generate_ingress_egress_per_cluster(edges_by_cluster,junction_clusters, net, vehicle_type='passenger')
 
 # Visualizza la mappa con i cluster, i centroidi, gli edge di frontiera e tutti gli edge ai margini della mappa per ciascun cluster
 output_file = 'clustered_map.png'
