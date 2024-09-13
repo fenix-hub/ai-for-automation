@@ -71,35 +71,58 @@ for idx in extreme_coords_indices:
 
 # Estrae gli edges e assegna i cluster
 edges_by_cluster = {i: [] for i in range(num_clusters)}
+
 for edge in root.findall('.//edge'):
     if edge.get('function') == 'internal':  # Salta gli edge interni
         continue
+    
     edge_id = edge.get('id')
     from_junction = edge.get('from')
     to_junction = edge.get('to')
     
+    # Inizializza le variabili allowed e disallowed
+    allowed_vehicles = set()
+    disallowed_vehicles = set()
+    
+    # Itera su tutte le corsie (lane) associate all'edge
+    for lane in edge.findall('.//lane'):
+        allow = lane.get('allow')
+        disallow = lane.get('disallow')
+        
+        if allow:
+            allowed_vehicles.update(allow.split())  # Aggiorna con i veicoli consentiti
+        if disallow:
+            disallowed_vehicles.update(disallow.split())  # Aggiorna con i veicoli non consentiti
+    
+    allowed_vehicles = ', '.join(allowed_vehicles) if allowed_vehicles else 'None'
+    disallowed_vehicles = ', '.join(disallowed_vehicles) if disallowed_vehicles else 'None'
+
+    # Aggiunge l'edge al cluster se entrambi i punti di giunzione sono nello stesso cluster
     if from_junction in junction_clusters and to_junction in junction_clusters:
         from_cluster = junction_clusters[from_junction]
         to_cluster = junction_clusters[to_junction]
         
-        # Aggiunge l'edges al cluster se entrambi i punti di giunzione sono nello stesso cluster
         if from_cluster == to_cluster:
             from_coord = fn.convert_to_geographic([coords[junction_ids.index(from_junction)]], net)[0]
             to_coord = fn.convert_to_geographic([coords[junction_ids.index(to_junction)]], net)[0]
+            
             edges_by_cluster[from_cluster].append({
                 'edge_id': edge_id,
                 'from_junction': from_junction,
                 'to_junction': to_junction,
                 'from_coord': from_coord,
-                'to_coord': to_coord
+                'to_coord': to_coord,
+                'allowed_vehicles': allowed_vehicles,
+                'disallowed_vehicles': disallowed_vehicles
             })
+
 
 # Genera i flussi di traffico per ogni cluster
 fn.generate_ingress_egress_per_cluster(edges_by_cluster,junction_clusters, net, vehicle_type='passenger')
 
 # Visualizza la mappa con i cluster, i centroidi, gli edge di frontiera e tutti gli edge ai margini della mappa per ciascun cluster
-output_file = 'clustered_map.png'
-fn.plot_clusters_and_edges(coords, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)
+#output_file = 'clustered_map.png'
+#fn.plot_clusters_and_edges(coords, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)
 
 # Salvataggio dei centroidi in un file CSV
 centroids_file = 'centroids.csv'
@@ -149,4 +172,4 @@ print("Flussi di traffico generati e salvati in file XML separati per ogni clust
 print(f"Coordinate geografiche dei centroidi salvate in {centroids_file}")
 print(f"Edge di frontiera tra cluster salvati in {border_edges_file}")
 print(f"Tutti gli edge ai margini della mappa per ciascun cluster salvati in {all_cluster_border_edges_file}")
-print(f"Mappa con cluster e centroidi salvata in {output_file}")
+#print(f"Mappa con cluster e centroidi salvata in {output_file}")

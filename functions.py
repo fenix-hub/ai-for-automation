@@ -37,28 +37,50 @@ def convert_to_geographic(centroids, net):
 def is_valid_route(from_edge, to_edge, net):
     try:
         route = net.getShortestPath(from_edge, to_edge)
+        if route[0] is None:
+            print(f"No route found between {from_edge} and {to_edge}")
         return route[0] is not None
-    except Exception:
+    except Exception as e:
+        print(f"Error in getting route between {from_edge} and {to_edge}: {e}")
         return False
 
-# !!!!!!!! Funzione di verifica se un edge è consentito per un tipo di veicolo
+
+# Funzione di verifica se un edge è consentito per un tipo di veicolo
 def is_edge_allowed_for_vehicle(edge, vehicle_type):
+    # Decomposizione delle stringe uniche allowed/disallowed in liste di singoli elementi
+    allowed_vehicles = [v.strip().rstrip(',') for v in edge.get('allowed_vehicles', '').split()]
+    disallowed_vehicles = [v.strip().rstrip(',') for v in edge.get('disallowed_vehicles', '').split()]
+
+    if 'None' in allowed_vehicles:
+        allowed_vehicles.remove('None')
     
-    #è necessario capire come prendere l'attributo ALLOW di un edge. Questa
-    #funzione è richiamata nella funzione successiva. 
+    if 'None' in disallowed_vehicles:
+        disallowed_vehicles.remove('None')
 
-    return 
+    # Debugging
+    #print(f"Edge: {edge}")
+    #print(f"Allowed Vehicles: {allowed_vehicles}")
+    #print(f"Disallowed Vehicles: {disallowed_vehicles}")
+    #print(f"Vehicle Type: {vehicle_type}")
 
-# Funzione per generare i flussi di traffico e salvare ingressi e uscite (per ciascun cluster)
+    if vehicle_type in disallowed_vehicles:
+        return False
+    
+    if vehicle_type in allowed_vehicles:
+        return True
+    
+    # Se allowed_vehicles è vuoto e disallowed_vehicles non contiene il tipo di veicolo, è valido
+    if not allowed_vehicles and vehicle_type not in disallowed_vehicles:
+        return True
+    
+    return False
+
+
 def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net, vehicle_type='passenger'):
     for cluster_id, edges in edges_by_cluster.items():
-        #with open(f'traffic_flows_ref/traffic_flows_cluster_{cluster_id}_ref.csv', 'w') as flows_file:
         with open(f'traffic_flows_cluster_{cluster_id}.xml', 'w') as flows_file:
             flows_file.write('<routes>\n')
             flow_id = 0
-            #header = ['FlowID', 'Ingress', 'Egress']
-            #flows_file.write(','.join(header) + '\n')
-
 
             # Estrazione degli ingressi e degli egress
             ingress_edges = []
@@ -73,8 +95,8 @@ def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net
                     egress_edges.append(edge)
             
             # Filtra gli ingressi e gli egress in base al tipo di veicolo
-            ingress_edges = [edge for edge in ingress_edges if is_edge_allowed_for_vehicle(net.getEdge(edge["edge_id"]), vehicle_type)]
-            egress_edges = [edge for edge in egress_edges if is_edge_allowed_for_vehicle(net.getEdge(edge["edge_id"]), vehicle_type)]
+            ingress_edges = [edge for edge in ingress_edges if is_edge_allowed_for_vehicle(edge, vehicle_type)]
+            egress_edges = [edge for edge in egress_edges if is_edge_allowed_for_vehicle(edge, vehicle_type)]
 
             # Generazione del flusso di traffico tra ingressi e uscite
             for ingress in ingress_edges:
@@ -92,6 +114,8 @@ def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net
                                 flow_id += 1
 
             flows_file.write('</routes>\n')
+
+
 
 
 
