@@ -78,8 +78,9 @@ def is_edge_allowed_for_vehicle(edge, vehicle_type):
 
 def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net, vehicle_type='passenger'):
     for cluster_id, edges in edges_by_cluster.items():
-        with open(f'traffic_flows_cluster_{cluster_id}.xml', 'w') as flows_file:
-            flows_file.write('<routes>\n')
+        with open(f'traffic_flows_ref/traffic_flows_cluster_{cluster_id}_ref.csv', 'w') as flows_file:
+        #with open(f'traffic_flows_cluster_{cluster_id}.xml', 'w') as flows_file:
+            #flows_file.write('<routes>\n')
             flow_id = 0
 
             # Estrazione degli ingressi e degli egress
@@ -109,11 +110,11 @@ def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net
                         if ingress_cluster == egress_cluster == cluster_id:
                             if is_valid_route(net.getEdge(ingress["edge_id"]), net.getEdge(egress["edge_id"]), net):
                                 flow_id_str = f"{cluster_id}_{flow_id}"
-                                flows_file.write(f'  <flow id="flow_{flow_id_str}" from="{ingress["edge_id"]}" to="{egress["edge_id"]}" begin="0" end="3600" number="50"/>\n')
-                                #flows_file.write(f'{flow_id_str},{ingress["edge_id"]},{egress["edge_id"]}\n')
+                                #flows_file.write(f'  <flow id="flow_{flow_id_str}" from="{ingress["edge_id"]}" to="{egress["edge_id"]}" begin="0" end="3600" number="10"/>\n')
+                                flows_file.write(f'{flow_id_str},{ingress["edge_id"]},{egress["edge_id"]}\n')
                                 flow_id += 1
 
-            flows_file.write('</routes>\n')
+            #flows_file.write('</routes>\n')
 
 
 

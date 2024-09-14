@@ -3,13 +3,16 @@ import sumolib
 import csv
 import numpy as np
 
+# Simulation Run : 
+# sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors
+
 # Caricamento file di rete SUMO
 sumo_network_file = 'bari_map.net.xml'
 tree, root, coords, junction_ids = fn.load_map(sumo_network_file) 
 net = sumolib.net.readNet(sumo_network_file)
 
 # Dati di custering 
-num_clusters = 6  # Numero di cluster 
+num_clusters = 7 # Numero di cluster 
 labels, centroids = fn.cluster_junctions(coords, num_clusters)
 
 # Conversione coordinate SUMO - coordinate geografiche dei centoridi
@@ -121,8 +124,8 @@ for edge in root.findall('.//edge'):
 fn.generate_ingress_egress_per_cluster(edges_by_cluster,junction_clusters, net, vehicle_type='passenger')
 
 # Visualizza la mappa con i cluster, i centroidi, gli edge di frontiera e tutti gli edge ai margini della mappa per ciascun cluster
-#output_file = 'clustered_map.png'
-#fn.plot_clusters_and_edges(coords, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)
+output_file = 'clustered_map.png'
+fn.plot_clusters_and_edges(coords, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)
 
 # Salvataggio dei centroidi in un file CSV
 centroids_file = 'centroids.csv'
@@ -172,4 +175,4 @@ print("Flussi di traffico generati e salvati in file XML separati per ogni clust
 print(f"Coordinate geografiche dei centroidi salvate in {centroids_file}")
 print(f"Edge di frontiera tra cluster salvati in {border_edges_file}")
 print(f"Tutti gli edge ai margini della mappa per ciascun cluster salvati in {all_cluster_border_edges_file}")
-#print(f"Mappa con cluster e centroidi salvata in {output_file}")
+print(f"Mappa con cluster e centroidi salvata in {output_file}")

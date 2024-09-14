@@ -53,7 +53,7 @@ def visualizza_percorso(flow_id):
     return mappa
 
 # Eseguiamo la funzione per il flow desiderato
-flow_id = 'flow_2_0'  # Sostituisci con il flow_id che vuoi visualizzare
+flow_id = 'flow_3_1475'  # Sostituisci con il flow_id che vuoi visualizzare
 mappa = visualizza_percorso(flow_id)
 
 # Mostriamo la mappa
