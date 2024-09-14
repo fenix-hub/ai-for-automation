@@ -33,7 +33,7 @@ def convert_to_geographic(centroids, net):
         geographic_coords.append((lon, lat))
     return geographic_coords
 
-# Funzione di verifica percorso valido tra due edge
+# Funzione di verifica percorso esistente tra due edge (Debug Version Fun.: eliminare if&print)
 def is_valid_route(from_edge, to_edge, net):
     try:
         route = net.getShortestPath(from_edge, to_edge)

@@ -1,3 +1,4 @@
+#MAIN SCRIPT
 import functions as fn
 import sumolib
 import csv
