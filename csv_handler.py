@@ -11,38 +11,47 @@ class CSVHandler:
     def __init__(self):
         pass
         
-    def readHistoricData(self, date):
-        return pd.read_csv(f"historic_data/{date.strftime('%Y-%m-%d')}.csv")
-
-    def writeHistoricData(self, data, date):
-        data.to_csv(f"historic_data/{date.strftime('%Y-%m-%d')}.csv", index=False)
-
-    def readTrafficData(self, date):
-        return pd.read_csv(f"traffic_data/{date.strftime('%Y-%m-%d')}.csv")
-
-    def writeTrafficData(self, data, date):
-        data.to_csv(f"traffic_data/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    def makePath(self, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
     
-    def readSlottedTrafficData(self, date):
-        return pd.read_csv(f"slotted_traffic_data/{date.strftime('%Y-%m-%d')}.csv")
+    def write(self, data, path, filename):
+        self.makePath(path)
+        data.to_csv(f'{path}/{filename}', index=False)
     
-    def writeSlottedTrafficData(self, data, date):
-        data.to_csv(f"slotted_traffic_data/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    def readHistoricData(self, date, path = "./historic_data"):
+        return pd.read_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv")
+
+    def writeHistoricData(self, data, date, path = "./historic_data"):
+        self.makePath(path)
+        data.to_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv", index=False)
+
+    def readTrafficData(self, date, path = "./traffic_data"):
+        return pd.read_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv")
+
+    def writeTrafficData(self, data, date, path = "./traffic_data"):
+        self.makePath(path)
+        data.to_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv", index=False)
+    
+    def readSlottedTrafficData(self, date, path = "./slotted_traffic_data"):
+        return pd.read_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv")
+    
+    def writeSlottedTrafficData(self, data, date, path = "./slotted_traffic_data"):
+        self.makePath(path)
+        data.to_csv(f"{path}/{date.strftime('%Y-%m-%d')}.csv", index=False)
     
     def readCentroids(self):
         return pd.read_csv("centroids.csv")
 
-    def readAllSlotted(self):
+    def readAllSlotted(self, path = "./slotted_traffic_data"):
         # Define the directory containing the CSV files
-        directory = 'slotted_traffic_data/'
-
         # List to hold the DataFrames
         dfs = pd.DataFrame()
 
         # Loop through all files in the directory
-        for filename in os.listdir(directory):
+        for filename in os.listdir(path):
             if filename.endswith(".csv"):  # Check for CSV files
-                file_path = os.path.join(directory, filename)
+                file_path = os.path.join(path, filename)
                 df = pd.read_csv(file_path)  # Read each CSV file into a DataFrame
                 dfs = pd.concat([dfs, df], ignore_index=True)
 
