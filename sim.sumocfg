@@ -1,7 +1,7 @@
 <configuration>
   <input>
-    <net-file value="massafra_map.net.xml"/>
-    <route-files value="traffic_flows_cluster_1.xml"/>
+    <net-file value="bari_map.net.xml"/>
+    <route-files value="traffic_flows_cluster_2.xml"/>
   </input>
   <time>
     <begin value="0"/>
