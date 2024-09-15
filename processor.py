@@ -12,17 +12,32 @@ class Processor:
         self.total_requests = 0
         self.MAX_REQUESTS = 2500
 
-    def getHistoricDataOnInterval(self, start, end, date, minute_interval=30):
+    def is_time_in_slot(self, date, slot):
+        from datetime import datetime
+        
+        # Parse the slot string
+        start_time_str, end_time_str = slot.split('-')
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+        end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        
+        # Get the time part of the date object
+        current_time = date.time()
+        
+        # Check if the current time is within the slot
+        return start_time <= current_time <= end_time
+
+    def getHistoricDataOnInterval(self, start, end, via, date, slots = None, minute_interval=30):
         # Calculate the number of divisions in an hour based on the minute interval
         total_intervals = (24 * 60) // minute_interval
         route_summaries = pd.DataFrame()
         
+        """
         # Total intervals equals to the amount of API Calls
         self.total_requests += total_intervals
         print (f"Total calls: {self.total_requests} (API Calls)")
         if self.total_requests > self.MAX_REQUESTS:
             print(f"Total intervals exceed the maximum number of requests allowed: {self.MAX_REQUESTS}")
-    
+        """
         
         for i in range(total_intervals):
             clear_output(wait=True)
@@ -34,8 +49,13 @@ class Processor:
             # Update the departure time by adding hours and minutes to the initial date
             departure_time = date.replace(hour=date.hour + hours, minute=date.minute + minutes)
             
+            # Only get data for the specified slots
+            if slots:
+                if not any([self.is_time_in_slot(departure_time, slot) for slot in slots]):
+                    continue
+            
             # Get route summary from the API
-            route_summary = self.ttapi.get_route_summary(start, end, departure_time)
+            route_summary = self.ttapi.get_route_summary(start, end, via, departure_time)
             
             # Collect data in the DataFrame
             route_summaries = pd.concat([route_summaries, pd.json_normalize(route_summary)], ignore_index=True)

@@ -10,11 +10,16 @@ import processor
 import csv_handler
 import transformer
 
+L_API_KEY = "pAfBQNn77gp9CKIP4Xa3PqTLwsAMQoT2"
+N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
+
 # Funzione per generare il file intermedio con le coordinate degli edge di partenza e arrivo
-def generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path): 
+def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, output_path): 
+    csvh = csv_handler.CSVHandler()
+    
     # Caricamento dei file CSV
     edges_df = pd.read_csv(edges_file_path)
-    traffic_flows_df = pd.read_csv(f'{traffic_flows_path}/traffic_flows_cluster_{cluster_id}_ref.csv')
+    traffic_flows_df = pd.read_csv(f'{traffic_flows_ref_path}/traffic_flows_cluster_{cluster_id}_ref.csv')
 
     # Rinomina delle colonne del file dei flussi di traffico
     traffic_flows_df.columns = ['Flow ID', 'Start Edge ID', 'End Edge ID']
@@ -76,6 +81,7 @@ def generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, outpu
     """
 
     # Salvataggio del file aggiornato con le nuove colonne
+    csvh.makePath(f'{output_path}/cluster_{cluster_id}')
     updated_intermediate_file_path = f'{output_path}/cluster_{cluster_id}/traffic_flow_data_cluster_{cluster_id}.csv'
     merged_df.to_csv(updated_intermediate_file_path, index=False)
 
@@ -83,19 +89,19 @@ def generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, outpu
     return merged_df
 
 # Funzione per ottenere i dati storici di traffico per ogni giorno
-def get_historic_data(flows_path, cluster_id, day_range, year, month, output_path, from_flow_id = None ):
+def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, output_path, from_flow_id = None ):
     # read the file
-    flows_df = pd.read_csv(f'{flows_path}/cluster_{cluster_id}/traffic_flow_data_cluster_{cluster_id}.csv')
+    flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
     
     # Define a TomTom API Client
-    ttapi = tomtom_api.Client(api_key = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx")
+    ttapi = tomtom_api.Client(api_key = L_API_KEY)
 
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
     historid_csv_handler = csv_handler.CSVHandler()
     
     # If from_flow_id is 'auto', start from the last flow_id processed, which is the last folder in {output_path}/cluster_{cluster_id}/historic/flow_{flow_id}
-    if from_flow_id == 'auto':
+    if from_flow_id == 'auto' and os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
         flows = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic'))[1]
         sorted_flows = sorted(flows, key=lambda x: int(x.split('_')[-1]))
         from_flow_id = sorted_flows[-1].split('flow_')[1]
@@ -103,23 +109,28 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, output_pat
     
     # Loop per ogni riga nel dataframe e chiamata API
     for index, row in flows_df.iterrows():
-        flow_id = row['Flow ID']
+        flow_id = row['flow_id']
         
         if from_flow_id is not None and flow_id < from_flow_id:
             continue
         
-        lat_start = row['Start From Lat']
-        lon_start = row['Start From Lon']
-        lat_end = row['End From Lat']
-        lon_end = row['End From Lon']
+        lat_start = row['start_point_lat']
+        lon_start = row['start_point_lon']
+        lat_end = row['end_point_lat']
+        lon_end = row['end_point_lon']
+        via_1_lat = row['via_point_1_lat']
+        via_1_lon = row['via_point_1_lon']
+        via_2_lat = row['via_point_2_lat']
+        via_2_lon = row['via_point_2_lon']
         
         start_point = f"{lat_start},{lon_start}"
         end_point = f"{lat_end},{lon_end}"
+        via_points = [f"{via_1_lat},{via_1_lon}", f"{via_2_lat},{via_2_lon}"]
         
         for day in day_range:
             date = datetime.datetime(year, month, day)
-            route_summaries = tt_processor.getHistoricDataOnInterval(start_point, end_point, date, minute_interval=60)
-            historid_csv_handler.writeHistoricData(route_summaries, date, f'{output_path}/cluster_{cluster_id}/historic/flow_{flow_id}')
+            route_summaries = tt_processor.getHistoricDataOnInterval(start_point, end_point, via_points, date, slots, minute_interval=60)
+            historid_csv_handler.writeHistoricData(route_summaries, date, f'{output_path}/cluster_{cluster_id}/historic/{flow_id}')
             print(f"Data saved in {output_path}/cluster_{cluster_id}/{flow_id}")
     print ("All data saved")
     return    
@@ -259,8 +270,9 @@ def generate_sumo_routes(cluster_id, slot):
 # Define edge file path, traffic flows path, cluster id, and output path
 edges_file_path = './edges.csv'
 traffic_flows_path = './traffic_flows_ref'
+traffic_flow_coords = './output_flows_coords'
 output_path = './traffic_flows_data'
-cluster_id = 0
+cluster_id = 1
 
 # Date Range for Route Analysis
 year = 2024
@@ -277,7 +289,7 @@ STEP 1
 A partire dai file CSV dei flow, generare un file intermedio con le coordinate degli edge di partenza e arrivo,
 nonchè il conteggio degli edge di partenza e arrivo per ogni flow
 """
-# traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
+traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
 
 """
 STEP 2
@@ -286,28 +298,28 @@ Per ogni flow, chiamare l'API TomTom per ottenere i dati storici di traffico per
 I dati storici vengono salvati in una cartella separata per ogni flow, non serve eseguire nuovamente questa operazione
 se i dati sono già stati salvati.
 """
-# get_historic_data(output_path, cluster_id, day_range, year, month, output_path, from_flow_id = 'auto')
+get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
 
 """
 Step 3
 =====
 Per ogni flow, calcolare i dati di traffico a partire dai dati storici.
 """
-# get_traffic_data(output_path, cluster_id)
+get_traffic_data(output_path, cluster_id)
 
 """
 STEP 4 
 =====
 Per ogni flow, calcolare i dati di traffico slottati.
 """
-# get_slotted_traffic_data(output_path, cluster_id, slots)
+get_slotted_traffic_data(output_path, cluster_id, slots)
 
 """
 STEP 5
 =====
 Per ogni flow, calcolare i dati di traffico aggregati.
 """
-# aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
+aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
 
 """
 STEP 6

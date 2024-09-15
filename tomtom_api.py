@@ -7,8 +7,8 @@ class Client:
         self.api_key = api_key
         self.base_url = "https://api.tomtom.com"
 
-    def get_route_summary(self, start, end, departure_time):
-        endpoint = "/routing/1/calculateRoute/{start}:{end}/json".format(start=start, end=end)
+    def get_route_summary(self, start, end, via_points, departure_time):
+        endpoint = "/routing/1/calculateRoute/{start}:{via}:{end}/json".format(start=start, end=end, via=":".join(via_points))
         url = self.base_url + endpoint
         params = {
             "departAt": departure_time.strftime('%Y-%m-%dT%H:%M:%S'),
