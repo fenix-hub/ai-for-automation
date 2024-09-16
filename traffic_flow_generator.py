@@ -94,7 +94,7 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
     
     # Define a TomTom API Client
-    ttapi = tomtom_api.Client(api_key = L_API_KEY)
+    ttapi = tomtom_api.Client(api_key = N_API_KEY)
 
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
@@ -104,14 +104,18 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     if from_flow_id == 'auto' and os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
         flows = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic'))[1]
         sorted_flows = sorted(flows, key=lambda x: int(x.split('_')[-1]))
-        from_flow_id = sorted_flows[-1].split('flow_')[1]
+        from_flow_id = sorted_flows[-1]
         print (f"Starting from flow_id {from_flow_id}")
     
+    lstrip = len(f'flow_{cluster_id}_')
+    from_flow_n = int(from_flow_id[lstrip:]) if from_flow_id is not None else 0
     # Loop per ogni riga nel dataframe e chiamata API
     for index, row in flows_df.iterrows():
         flow_id = row['flow_id']
         
-        if from_flow_id is not None and flow_id < from_flow_id:
+        # Skip tutti i flow già processati
+        if from_flow_id is not None and int(flow_id[lstrip:]) < from_flow_n:
+            print(f"Skipping flow {flow_id}")
             continue
         
         lat_start = row['start_point_lat']
