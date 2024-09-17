@@ -3,6 +3,7 @@ import datetime
 import os
 import json
 import xml.etree.ElementTree as ET
+import random
 
 # Moduli personali
 import tomtom_api
@@ -250,17 +251,26 @@ def generate_sumo_routes(cluster_id, slot):
             return
         
         # Get the aggregated data for the flow
+        # begin_values = [0, 600, 1200, 2400]
+        # end_values = [1200, 2400, 3000, 3600]
+
         if flow_id in aggregated_data and slot_index in aggregated_data[flow_id]['avg_number_of_vehicles']:
             avg_number_of_vehicles = aggregated_data[flow_id]['avg_number_of_vehicles'][slot_index]
             number_of_vehicles = avg_number_of_vehicles / start_count if start_count != 0 else 0
             
+            # while True:
+            #  begin = random.choice(begin_values)
+            #  end = random.choice(end_values)
+            #  if begin < end:
+            #      break
+
             # Create the flow element
             flow = ET.SubElement(routes, 'flow')
             flow.set('id', f'flow_{flow_id}')
             flow.set('from', start_edge_id)
             flow.set('to', end_edge_id)
-            flow.set('begin', '0')
-            flow.set('end', '3600')
+            flow.set('begin', '0')  #flow.set('begin', str(begin))
+            flow.set('end', '3600') #flow.set('begin', str(end))
             flow.set('number', str(round(number_of_vehicles)))
 
     # Write the XML to a file
