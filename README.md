@@ -7,4 +7,4 @@ Scripts:
 
 ![](sumo_data_process.png.png)
 
-[functions_table.md](./functions_table.md)
+<!-- Include qui il contenuto di functions_table.md -->
