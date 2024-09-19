@@ -281,6 +281,47 @@ def generate_sumo_routes(cluster_id, slot):
 
     print(f"Generated traffic flows saved in traffic_flows_data/cluster_{cluster_id}/{fname}.xml")
 
+
+# def reorder_routes(xml_file_path):
+#
+#     tree = ET.parse(xml_file_path)
+#     root = tree.getroot()
+
+#     # Estre tutti i flow dall'XML
+#     flows = []
+#     for flow in root.findall('flow'):
+#         flow_data = {
+#             'id': flow.get('id'),
+#             'from': flow.get('from'),
+#             'to': flow.get('to'),
+#             'begin': int(flow.get('begin')),
+#             'end': int(flow.get('end')),
+#             'number': flow.get('number')
+#         }
+#         flows.append(flow_data)
+
+#     # Ordina i flow in base al valore di 'begin'
+#     flows.sort(key=lambda x: x['begin'])
+
+#     # Pulisce l'albero XML dai flow esistenti (disordinati)
+#     for flow in root.findall('flow'):
+#         root.remove(flow)
+
+#     # Ricompone l'albero con i flow ordinati 
+#     for flow_data in flows:
+#         flow = ET.SubElement(root, 'flow')
+#         flow.set('id', flow_data['id'])
+#         flow.set('from', flow_data['from'])
+#         flow.set('to', flow_data['to'])
+#         flow.set('begin', str(flow_data['begin']))
+#         flow.set('end', str(flow_data['end']))
+#         flow.set('number', flow_data['number'])
+
+#     # Sovrascrive i file delle routes con i traffic flows ordinati rispetto al begin
+#     ET.indent(tree)
+#     tree.write(xml_file_path, encoding='utf-8', xml_declaration=True)
+
+
 # Define edge file path, traffic flows path, cluster id, and output path
 edges_file_path = './edges.csv'
 traffic_flows_path = './traffic_flows_ref'
