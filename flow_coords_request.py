@@ -1,4 +1,6 @@
 #THIS SCRIPT CONVERTS EACH ROUTE IN GEO-COORS. AND SAVES RESULTS IN CSVs FOR TOMTOM API CALLS
+#All generated files are available in output_flows_coords directory
+
 import xml.etree.ElementTree as ET
 import pandas as pd
 
