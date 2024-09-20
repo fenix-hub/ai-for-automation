@@ -1,10 +1,10 @@
 <configuration>
   <input>
-    <net-file value="bari_map.net.xml"/>
-    <route-files value="traffic_flows_cluster_2.xml"/>
+    <net-file value="bari1_map.net.xml"/>
+    <route-files value="sorted_updated_route_07-00_10-00.xml"/>
   </input>
   <time>
     <begin value="0"/>
-    <end value="1000000"/>
+    <end value="3600"/>
   </time>
 </configuration>

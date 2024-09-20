@@ -1,12 +1,3 @@
-# AI For Automation
-
-Scripts:  
-- `tomtom_api.py`: contiene un client per le api REST di TomTom
-- `processor.py`: processore che elaborata i dati di traffico di tom tom
-- `route_analysis.ipynb`: file jupyter con le elaborazioni
-
-![](sumo_data_process.png.png)
-
 | Funzione                         | Descrizione                                                                                       | Parametri Input                                                                                       |
 |-----------------------------------|---------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
 | `load_map(file_path)`             | Carica una mappa XML SUMO, estraendo giunzioni e restituendo un array con le loro coordinate.      | `file_path` (str): il percorso del file XML da caricare.                                                |
