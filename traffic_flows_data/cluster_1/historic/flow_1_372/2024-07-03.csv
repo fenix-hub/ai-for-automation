@@ -1,0 +1,12 @@
+lengthInMeters,travelTimeInSeconds,departureTime,noTrafficTravelTimeInSeconds,historicTrafficTravelTimeInSeconds,liveTrafficIncidentsTravelTimeInSeconds,points
+719,190,2024-07-03T07:00:00+02:00,177,190,190,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,213,2024-07-03T08:00:00+02:00,177,213,213,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,211,2024-07-03T09:00:00+02:00,177,211,211,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,203,2024-07-03T10:00:00+02:00,177,203,203,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,203,2024-07-03T13:00:00+02:00,177,203,203,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,201,2024-07-03T14:00:00+02:00,177,201,201,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,200,2024-07-03T15:00:00+02:00,177,200,200,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,209,2024-07-03T18:00:00+02:00,177,209,209,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+719,207,2024-07-03T19:00:00+02:00,177,207,207,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+972,213,2024-07-03T20:00:00+02:00,184,213,213,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"
+972,201,2024-07-03T21:00:00+02:00,184,201,201,"[{'latitude': 41.10124, 'longitude': 16.86199}, {'latitude': 41.10125, 'longitude': 16.8618}]"

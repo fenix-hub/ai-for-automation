@@ -1,0 +1,4 @@
+slot,avg_traffic_speed,avg_density_factor,avg_number_of_vehicles,points
+07:00:00-10:00:00,13.42675965932932,1.2455516014234875,350.0,"[{'latitude': 41.10251, 'longitude': 16.86088}, {'latitude': 41.1027, 'longitude': 16.8616}, {'latitude': 41.1027, 'longitude': 16.86165}]"
+13:00:00-15:00:00,13.582551566080976,1.2224199288256226,343.5,"[{'latitude': 41.10251, 'longitude': 16.86088}, {'latitude': 41.1027, 'longitude': 16.8616}, {'latitude': 41.1027, 'longitude': 16.86165}]"
+18:00:00-21:00:00,11.744327660348915,1.419928825622776,399.0,"[{'latitude': 41.10251, 'longitude': 16.86088}, {'latitude': 41.1027, 'longitude': 16.8616}, {'latitude': 41.1027, 'longitude': 16.86165}]"

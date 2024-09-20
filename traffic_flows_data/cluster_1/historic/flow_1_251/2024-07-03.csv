@@ -1,0 +1,12 @@
+lengthInMeters,travelTimeInSeconds,departureTime,noTrafficTravelTimeInSeconds,historicTrafficTravelTimeInSeconds,liveTrafficIncidentsTravelTimeInSeconds,points
+667,198,2024-07-03T07:00:00+02:00,183,198,198,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,218,2024-07-03T08:00:00+02:00,183,218,218,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,206,2024-07-03T09:00:00+02:00,183,206,206,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,198,2024-07-03T10:00:00+02:00,183,198,198,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,199,2024-07-03T13:00:00+02:00,183,199,199,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,201,2024-07-03T14:00:00+02:00,183,201,201,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,207,2024-07-03T15:00:00+02:00,183,207,207,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,207,2024-07-03T18:00:00+02:00,183,207,207,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,195,2024-07-03T19:00:00+02:00,183,195,195,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,189,2024-07-03T20:00:00+02:00,183,189,189,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"
+667,186,2024-07-03T21:00:00+02:00,183,186,186,"[{'latitude': 41.09582, 'longitude': 16.86572}, {'latitude': 41.09564, 'longitude': 16.86571}, {'latitude': 41.09528, 'longitude': 16.86568}]"

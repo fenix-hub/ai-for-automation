@@ -94,21 +94,33 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
     
     # Define a TomTom API Client
-    ttapi = tomtom_api.Client(api_key = N_API_KEY)
+    ttapi = tomtom_api.Client(api_key = L_API_KEY)
 
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
     historid_csv_handler = csv_handler.CSVHandler()
     
+    
     # If from_flow_id is 'auto', start from the last flow_id processed, which is the last folder in {output_path}/cluster_{cluster_id}/historic/flow_{flow_id}
-    if from_flow_id == 'auto' and os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
+    from_flow_n = from_flow_id
+    lstrip = len(f'flow_{cluster_id}_')
+    if from_flow_id == 'auto' and \
+        os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
         flows = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic'))[1]
         sorted_flows = sorted(flows, key=lambda x: int(x.split('_')[-1]))
         from_flow_id = sorted_flows[-1]
-        print (f"Starting from flow_id {from_flow_id}")
+        # also check if a folder already has data for the same date
+        if os.path.exists(f'{output_path}/cluster_{cluster_id}/historic/{from_flow_id}'):
+            files = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic/{from_flow_id}'))[2]
+            if len(files) > 0:
+                # get the last date
+                dates = [int(f.split('.')[0].split('_')[-1]) for f in files]
+                from_flow_n = max(dates)
+        else:
+            from_flow_n = 0
+        from_flow_n = int(from_flow_id[lstrip:]) if from_flow_id is not None else 0
+        print (f"Starting from flow_id {from_flow_n}")
     
-    lstrip = len(f'flow_{cluster_id}_')
-    from_flow_n = int(from_flow_id[lstrip:]) if from_flow_id is not None else 0
     # Loop per ogni riga nel dataframe e chiamata API
     for index, row in flows_df.iterrows():
         flow_id = row['flow_id']
@@ -131,6 +143,7 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
         end_point = f"{lat_end},{lon_end}"
         via_points = [f"{via_1_lat},{via_1_lon}", f"{via_2_lat},{via_2_lon}"]
         
+        print (f"Processing flow {flow_id}")
         for day in day_range:
             date = datetime.datetime(year, month, day)
             route_summaries = tt_processor.getHistoricDataOnInterval(start_point, end_point, via_points, date, slots, minute_interval=60)
@@ -281,7 +294,7 @@ cluster_id = 1
 # Date Range for Route Analysis
 year = 2024
 month = 7
-day_range = range(1, 2)
+day_range = range(4, 5)
 
 # define time slots in a day
 # slots = ["00:00-06:00", "06:00-12:00", "12:00-18:00", "18:00-23:59"]
@@ -302,7 +315,7 @@ Per ogni flow, chiamare l'API TomTom per ottenere i dati storici di traffico per
 I dati storici vengono salvati in una cartella separata per ogni flow, non serve eseguire nuovamente questa operazione
 se i dati sono già stati salvati.
 """
-get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
+get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = None)
 
 """
 Step 3

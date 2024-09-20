@@ -1,0 +1,12 @@
+lengthInMeters,travelTimeInSeconds,departureTime,noTrafficTravelTimeInSeconds,historicTrafficTravelTimeInSeconds,liveTrafficIncidentsTravelTimeInSeconds,points
+1066,246,2024-07-02T07:00:00+02:00,230,246,246,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,268,2024-07-02T08:00:00+02:00,230,268,268,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,269,2024-07-02T09:00:00+02:00,230,269,269,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,265,2024-07-02T10:00:00+02:00,230,265,265,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,264,2024-07-02T13:00:00+02:00,230,264,264,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,261,2024-07-02T14:00:00+02:00,230,261,261,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,261,2024-07-02T15:00:00+02:00,230,261,261,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,278,2024-07-02T18:00:00+02:00,230,278,278,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,271,2024-07-02T19:00:00+02:00,230,271,271,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,260,2024-07-02T20:00:00+02:00,230,260,260,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
+1066,246,2024-07-02T21:00:00+02:00,230,246,246,"[{'latitude': 41.099, 'longitude': 16.86478}, {'latitude': 41.09901, 'longitude': 16.86503}]"
