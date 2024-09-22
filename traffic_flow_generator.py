@@ -95,7 +95,7 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
     
     # Define a TomTom API Client
-    ttapi = tomtom_api.Client(api_key = L_API_KEY)
+    ttapi = tomtom_api.Client(api_key = N_API_KEY)
 
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
@@ -105,18 +105,23 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     # If from_flow_id is 'auto', start from the last flow_id processed, which is the last folder in {output_path}/cluster_{cluster_id}/historic/flow_{flow_id}
     from_flow_n = from_flow_id
     lstrip = len(f'flow_{cluster_id}_')
-    if from_flow_id == 'auto' and \
-        os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
+    if from_flow_id == 'auto' and os.path.exists(f'{output_path}/cluster_{cluster_id}/historic'):
         flows = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic'))[1]
         sorted_flows = sorted(flows, key=lambda x: int(x.split('_')[-1]))
-        from_flow_id = sorted_flows[-1]
-        # also check if a folder already has data for the same date
-        if os.path.exists(f'{output_path}/cluster_{cluster_id}/historic/{from_flow_id}'):
-            files = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic/{from_flow_id}'))[2]
-            if len(files) > 0:
-                # get the last date
-                dates = [int(f.split('.')[0].split('_')[-1]) for f in files]
-                from_flow_n = max(dates)
+        for flow in sorted_flows:
+            if os.path.exists(f'{output_path}/cluster_{cluster_id}/historic/{flow}'):
+                files = next(os.walk(f'{output_path}/cluster_{cluster_id}/historic/{flow}'))[2]
+                if len(files) > 0:
+                    # get the last date , dates are in format 2024-07-04.csv
+                    dates = [f.split('.')[0] for f in files]
+                    dates.sort()
+                    print (f"Dates: {dates}")
+                    last_date = dates[-1]
+                    _year, _month, _day = last_date.split('-')
+                    if int(_day) < day_range.start:
+                        from_flow_id = flow
+                        break
+            from_flow_id = sorted_flows[-1]
         else:
             from_flow_n = 0
         from_flow_n = int(from_flow_id[lstrip:]) if from_flow_id is not None else 0
@@ -237,7 +242,8 @@ def load_aggregated_data(json_file_path):
     return aggregated_traffic_data
 
 # Funzione per generare i file di traffic flow aggregati per tutti i flussi
-def generate_sumo_routes(cluster_id, slot):
+# @begin_values e @end_values sono i valori di inizio e fine dei flussi per la simulazione su SUMO
+def generate_sumo_routes(cluster_id, slot, begin_values = [0, 600, 1200, 2400], end_values = [1200, 2400, 3000, 3600]):
     # Load the CSV file
     df = pd.read_csv(f'traffic_flows_data/cluster_{cluster_id}/traffic_flow_data_cluster_{cluster_id}.csv')
 
@@ -247,6 +253,9 @@ def generate_sumo_routes(cluster_id, slot):
 
     # Create the root element for the XML
     routes = ET.Element('routes')
+
+    # Lista temporanea per raccogliere i flow prima di ordinarli
+    flows = []
 
     # Iterate through each row in the CSV
     for _, row in df.iterrows():
@@ -262,29 +271,41 @@ def generate_sumo_routes(cluster_id, slot):
         if slot_index is None:
             print(f"Slot {slot} not found in the aggregated data")
             return
-        
-        # Get the aggregated data for the flow
-        # begin_values = [0, 600, 1200, 2400]
-        # end_values = [1200, 2400, 3000, 3600]
 
         if flow_id in aggregated_data and slot_index in aggregated_data[flow_id]['avg_number_of_vehicles']:
             avg_number_of_vehicles = aggregated_data[flow_id]['avg_number_of_vehicles'][slot_index]
-            number_of_vehicles = avg_number_of_vehicles / start_count if start_count != 0 else 0
+            number_of_vehicles = (avg_number_of_vehicles / start_count) if start_count != 0 else 0
             
-            # while True:
-            #  begin = random.choice(begin_values)
-            #  end = random.choice(end_values)
-            #  if begin < end:
-            #      break
+            while True:
+                begin = random.choice(begin_values)
+                end = random.choice(end_values)
+                if begin < end:
+                    break
 
-            # Create the flow element
-            flow = ET.SubElement(routes, 'flow')
-            flow.set('id', f'flow_{flow_id}')
-            flow.set('from', start_edge_id)
-            flow.set('to', end_edge_id)
-            flow.set('begin', '0')  #flow.set('begin', str(begin))
-            flow.set('end', '3600') #flow.set('begin', str(end))
-            flow.set('number', str(round(number_of_vehicles)))
+            # Crea il dizionario del flow con tutti i dettagli
+            flow_data = {
+                'id': f'flow_{flow_id}',
+                'from': start_edge_id,
+                'to': end_edge_id,
+                'begin': begin,
+                'end': end,
+                'number': round(number_of_vehicles)
+            }
+            # Aggiungi il flow alla lista
+            flows.append(flow_data)
+
+    # Ordina i flow in base al valore di 'begin'
+    flows.sort(key=lambda x: x['begin'])
+
+    # Aggiungi i flow ordinati all'elemento 'routes'
+    for flow_data in flows:
+        flow = ET.SubElement(routes, 'flow')
+        flow.set('id', flow_data['id'])
+        flow.set('from', flow_data['from'])
+        flow.set('to', flow_data['to'])
+        flow.set('begin', str(flow_data['begin']))
+        flow.set('end', str(flow_data['end']))
+        flow.set('number', str(flow_data['number']))
 
     # Write the XML to a file
     tree = ET.ElementTree(routes)
@@ -295,44 +316,44 @@ def generate_sumo_routes(cluster_id, slot):
     print(f"Generated traffic flows saved in traffic_flows_data/cluster_{cluster_id}/{fname}.xml")
 
 
-# def reorder_routes(xml_file_path):
-#
-#     tree = ET.parse(xml_file_path)
-#     root = tree.getroot()
+def reorder_routes(xml_file_path):
 
-#     # Estre tutti i flow dall'XML
-#     flows = []
-#     for flow in root.findall('flow'):
-#         flow_data = {
-#             'id': flow.get('id'),
-#             'from': flow.get('from'),
-#             'to': flow.get('to'),
-#             'begin': int(flow.get('begin')),
-#             'end': int(flow.get('end')),
-#             'number': flow.get('number')
-#         }
-#         flows.append(flow_data)
+    tree = ET.parse(xml_file_path)
+    root = tree.getroot()
 
-#     # Ordina i flow in base al valore di 'begin'
-#     flows.sort(key=lambda x: x['begin'])
+    # Estre tutti i flow dall'XML
+    flows = []
+    for flow in root.findall('flow'):
+        flow_data = {
+            'id': flow.get('id'),
+            'from': flow.get('from'),
+            'to': flow.get('to'),
+            'begin': int(flow.get('begin')),
+            'end': int(flow.get('end')),
+            'number': flow.get('number')
+        }
+        flows.append(flow_data)
 
-#     # Pulisce l'albero XML dai flow esistenti (disordinati)
-#     for flow in root.findall('flow'):
-#         root.remove(flow)
+    # Ordina i flow in base al valore di 'begin'
+    flows.sort(key=lambda x: x['begin'])
 
-#     # Ricompone l'albero con i flow ordinati 
-#     for flow_data in flows:
-#         flow = ET.SubElement(root, 'flow')
-#         flow.set('id', flow_data['id'])
-#         flow.set('from', flow_data['from'])
-#         flow.set('to', flow_data['to'])
-#         flow.set('begin', str(flow_data['begin']))
-#         flow.set('end', str(flow_data['end']))
-#         flow.set('number', flow_data['number'])
+    # Pulisce l'albero XML dai flow esistenti (disordinati)
+    for flow in root.findall('flow'):
+        root.remove(flow)
 
-#     # Sovrascrive i file delle routes con i traffic flows ordinati rispetto al begin
-#     ET.indent(tree)
-#     tree.write(xml_file_path, encoding='utf-8', xml_declaration=True)
+    # Ricompone l'albero con i flow ordinati 
+    for flow_data in flows:
+        flow = ET.SubElement(root, 'flow')
+        flow.set('id', flow_data['id'])
+        flow.set('from', flow_data['from'])
+        flow.set('to', flow_data['to'])
+        flow.set('begin', str(flow_data['begin']))
+        flow.set('end', str(flow_data['end']))
+        flow.set('number', flow_data['number'])
+
+    # Sovrascrive i file delle routes con i traffic flows ordinati rispetto al begin
+    ET.indent(tree)
+    tree.write(xml_file_path, encoding='utf-8', xml_declaration=True)
 
 
 # Define edge file path, traffic flows path, cluster id, and output path
@@ -340,12 +361,18 @@ edges_file_path = './edges.csv'
 traffic_flows_path = './traffic_flows_ref'
 traffic_flow_coords = './output_flows_coords'
 output_path = './traffic_flows_data'
-cluster_id = 1
+
+cluster_id = int(input("Enter cluster id: "))
 
 # Date Range for Route Analysis
-year = 2024
-month = 7
-day_range = range(4, 5)
+# year = 2024
+# month = 7
+# day_range = range(4, 5)
+
+# year, month and day range come from terminal input
+year = int(input("Enter the year: "))
+month = int(input("Enter the month: "))
+day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))
 
 # define time slots in a day
 # slots = ["00:00-06:00", "06:00-12:00", "12:00-18:00", "18:00-23:59"]
@@ -357,7 +384,7 @@ STEP 1
 A partire dai file CSV dei flow, generare un file intermedio con le coordinate degli edge di partenza e arrivo,
 nonchè il conteggio degli edge di partenza e arrivo per ogni flow
 """
-traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
+# traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
 
 """
 STEP 2
@@ -366,28 +393,28 @@ Per ogni flow, chiamare l'API TomTom per ottenere i dati storici di traffico per
 I dati storici vengono salvati in una cartella separata per ogni flow, non serve eseguire nuovamente questa operazione
 se i dati sono già stati salvati.
 """
-get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = None)
+# get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
 
 """
 Step 3
 =====
 Per ogni flow, calcolare i dati di traffico a partire dai dati storici.
 """
-get_traffic_data(output_path, cluster_id)
+# get_traffic_data(output_path, cluster_id)
 
 """
 STEP 4 
 =====
 Per ogni flow, calcolare i dati di traffico slottati.
 """
-get_slotted_traffic_data(output_path, cluster_id, slots)
+# get_slotted_traffic_data(output_path, cluster_id, slots)
 
 """
 STEP 5
 =====
 Per ogni flow, calcolare i dati di traffico aggregati.
 """
-aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
+# aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
 
 """
 STEP 6
