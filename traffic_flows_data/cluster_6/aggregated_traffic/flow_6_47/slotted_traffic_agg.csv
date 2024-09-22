@@ -1,4 +1,0 @@
-slot,avg_traffic_speed,avg_density_factor,avg_number_of_vehicles,points
-07:00-10:00,17.16825806309912,1.318996415770609,499.0,"[{'latitude': 41.10061, 'longitude': 16.87262}, {'latitude': 41.10061, 'longitude': 16.87193}, {'latitude': 41.10061, 'longitude': 16.87145}, {'latitude': 41.10054, 'longitude': 16.87144}, {'latitude': 41.10054, 'longitude': 16.87149}]"
-13:00-15:00,16.59225325413876,1.353046594982079,511.5,"[{'latitude': 41.10061, 'longitude': 16.87262}, {'latitude': 41.10061, 'longitude': 16.87193}, {'latitude': 41.10061, 'longitude': 16.87145}, {'latitude': 41.10054, 'longitude': 16.87144}, {'latitude': 41.10054, 'longitude': 16.87149}]"
-18:00-21:00,15.45197787228164,1.4575866188769415,551.0,"[{'latitude': 41.10061, 'longitude': 16.87262}, {'latitude': 41.10061, 'longitude': 16.87193}, {'latitude': 41.10061, 'longitude': 16.87145}, {'latitude': 41.10054, 'longitude': 16.87144}, {'latitude': 41.10054, 'longitude': 16.87149}]"
