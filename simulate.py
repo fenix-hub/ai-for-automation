@@ -7,6 +7,18 @@ def update_route_file():
     tree = ET.parse('sim.sumocfg')
     root = tree.getroot()
 
+    def get_cluster_number():
+        def menu(stdscr):
+            curses.curs_set(0)
+            curses.echo()
+            stdscr.addstr("Enter the cluster number: ")
+            cluster_number = stdscr.getstr().decode('utf-8')
+            return int(cluster_number)
+
+        return curses.wrapper(menu)
+
+    cluster = get_cluster_number()
+
     def get_user_choice(options):
         def menu(stdscr):
             curses.curs_set(0)
@@ -46,11 +58,11 @@ def update_route_file():
         print("Invalid choice. Exiting.")
         return
 
-    cluster = int(input("Enter the cluster number: "))
-
     # Get the selected time range
     selected_range = options[choice]
     start_time, end_time = selected_range.split('-')
+    start_time = start_time.replace(':', '-')
+    end_time = end_time.replace(':', '-')
     route_file_value = f"traffic_flows_data/cluster_{cluster}/route_{start_time}_{end_time}.xml"
 
     # Update the <route-files> value
