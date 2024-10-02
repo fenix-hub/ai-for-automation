@@ -38,11 +38,15 @@ def is_valid_route(from_edge, to_edge, net):
     try:
         route = net.getShortestPath(from_edge, to_edge)
         if route[0] is None:
-            print(f"No route found between {from_edge} and {to_edge}")
-        return route[0] is not None
+            # Nessun percorso trovato, ritorna False e 0 come lunghezza
+            return False, 0
+        else:
+            # Percorso valido, ritorna True e il numero di edges
+            return True, len(route[0])
     except Exception as e:
         print(f"Error in getting route between {from_edge} and {to_edge}: {e}")
-        return False
+        return False, 0
+
 
 
 # Funzione di verifica se un edge è consentito per un tipo di veicolo
@@ -108,10 +112,11 @@ def generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net
                         
                         # Verifica che ingresso ed uscita appartengano allo stesso cluster
                         if ingress_cluster == egress_cluster == cluster_id:
-                            if is_valid_route(net.getEdge(ingress["edge_id"]), net.getEdge(egress["edge_id"]), net):
+                            is_valid, flow_len = is_valid_route(net.getEdge(ingress["edge_id"]), net.getEdge(egress["edge_id"]), net)
+                            if is_valid:
                                 flow_id_str = f"{cluster_id}_{flow_id}"
                                 #flows_file.write(f'  <flow id="flow_{flow_id_str}" from="{ingress["edge_id"]}" to="{egress["edge_id"]}" begin="0" end="3600" number="10"/>\n')
-                                flows_file.write(f'{flow_id_str},{ingress["edge_id"]},{egress["edge_id"]}\n')
+                                flows_file.write(f'{flow_id_str},{ingress["edge_id"]},{egress["edge_id"]},{flow_len}\n')
                                 flow_id += 1
 
             #flows_file.write('</routes>\n')
