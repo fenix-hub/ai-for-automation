@@ -10,6 +10,7 @@ import tomtom_api
 import processor
 import csv_handler
 import transformer
+import curses
 
 L_API_KEY = "pAfBQNn77gp9CKIP4Xa3PqTLwsAMQoT2"
 N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
@@ -374,9 +375,97 @@ year = int(input("Enter the year: "))
 month = int(input("Enter the month: "))
 day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))
 
-# define time slots in a day
-# slots = ["00:00-06:00", "06:00-12:00", "12:00-18:00", "18:00-23:59"]
-slots = ["07:00-10:00", "13:00-15:00", "18:00-21:00"]
+POSSIBLE_SLOTS = ["00:00-06:00", "06:00-12:00", "12:00-18:00", "18:00-23:59", "07:00-10:00", "13:00-15:00", "18:00-21:00"]
+
+def main(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.refresh()
+
+    selected_slots = [False] * len(POSSIBLE_SLOTS)
+    current_selection = 0
+
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Select time slots using SPACE to toggle and ENTER to confirm:")
+
+        for idx, slot in enumerate(POSSIBLE_SLOTS):
+            if selected_slots[idx]:
+                stdscr.addstr(idx + 1, 0, f"[X] {slot}")
+            else:
+                stdscr.addstr(idx + 1, 0, f"[ ] {slot}")
+
+        stdscr.addstr(current_selection + 1, 0, ">")
+
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP and current_selection > 0:
+            current_selection -= 1
+        elif key == curses.KEY_DOWN and current_selection < len(POSSIBLE_SLOTS) - 1:
+            current_selection += 1
+        elif key == ord(' '):
+            selected_slots[current_selection] = not selected_slots[current_selection]
+        elif key == ord('\n'):
+            break
+
+    slots = [slot for idx, slot in enumerate(POSSIBLE_SLOTS) if selected_slots[idx]]
+    return slots
+
+slots = curses.wrapper(main)
+
+
+def select_steps(stdscr):
+    curses.curs_set(0)
+    stdscr.clear()
+    stdscr.refresh()
+
+    steps = [
+        "Generate intermediate file with coordinates",
+        "Get historic traffic data",
+        "Calculate traffic data from historic data",
+        "Calculate slotted traffic data",
+        "Calculate aggregated traffic data",
+        "Generate SUMO routes"
+    ]
+
+    selected_steps = [False] * len(steps)
+    current_selection = 0
+
+    while True:
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Select steps to execute using SPACE to toggle and ENTER to confirm:")
+
+        for idx, step in enumerate(steps):
+            if selected_steps[idx]:
+                stdscr.addstr(idx + 1, 0, f"[X] {step}")
+            else:
+                stdscr.addstr(idx + 1, 0, f"[ ] {step}")
+
+        stdscr.addstr(current_selection + 1, 0, ">")
+
+        key = stdscr.getch()
+
+        if key == curses.KEY_UP and current_selection > 0:
+            current_selection -= 1
+        elif key == curses.KEY_DOWN and current_selection < len(steps) - 1:
+            current_selection += 1
+        elif key == ord(' '):
+            selected_steps[current_selection] = not selected_steps[current_selection]
+        elif key == ord('\n'):
+            break
+
+    return selected_steps
+
+selected_steps = curses.wrapper(select_steps)
+
+execute_steps = {
+    "step1": selected_steps[0],
+    "step2": selected_steps[1],
+    "step3": selected_steps[2],
+    "step4": selected_steps[3],
+    "step5": selected_steps[4],
+    "step6": selected_steps[5]
+}
 
 """
 STEP 1
@@ -384,7 +473,8 @@ STEP 1
 A partire dai file CSV dei flow, generare un file intermedio con le coordinate degli edge di partenza e arrivo,
 nonchè il conteggio degli edge di partenza e arrivo per ogni flow
 """
-# traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
+if execute_steps["step1"]:
+    traffic_flow_data_cluster = generate_intermediate(edges_file_path, traffic_flows_path, cluster_id, output_path)
 
 """
 STEP 2
@@ -393,34 +483,38 @@ Per ogni flow, chiamare l'API TomTom per ottenere i dati storici di traffico per
 I dati storici vengono salvati in una cartella separata per ogni flow, non serve eseguire nuovamente questa operazione
 se i dati sono già stati salvati.
 """
-# get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
+if execute_steps["step2"]:
+    get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
 
 """
 Step 3
 =====
 Per ogni flow, calcolare i dati di traffico a partire dai dati storici.
 """
-# get_traffic_data(output_path, cluster_id)
+if execute_steps["step3"]:
+    get_traffic_data(output_path, cluster_id)
 
 """
 STEP 4 
 =====
 Per ogni flow, calcolare i dati di traffico slottati.
 """
-# get_slotted_traffic_data(output_path, cluster_id, slots)
+if execute_steps["step4"]:
+    get_slotted_traffic_data(output_path, cluster_id, slots)
 
 """
 STEP 5
 =====
 Per ogni flow, calcolare i dati di traffico aggregati.
 """
-# aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
+if execute_steps["step5"]:
+    aggregated_traffic_data_for_flow = get_aggregated_data(output_path, cluster_id, slots)
 
 """
 STEP 6
 =====
 Generare i file di traffic flow aggregati per tutti i flussi
 """
-generate_sumo_routes(cluster_id, slots[0])
-generate_sumo_routes(cluster_id, slots[1])
-generate_sumo_routes(cluster_id, slots[2])
+if execute_steps["step6"]:
+    for slot in slots:
+        generate_sumo_routes(cluster_id, slot)
