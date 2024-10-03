@@ -41,7 +41,7 @@ def is_valid_route(from_edge, to_edge, net):
             # Nessun percorso trovato, ritorna False e 0 come lunghezza
             return False, 0
         else:
-            # Percorso valido, ritorna True e il numero di edges
+            # Percorso esistente, ritorna True e il numero di edges
             return True, len(route[0])
     except Exception as e:
         print(f"Error in getting route between {from_edge} and {to_edge}: {e}")
