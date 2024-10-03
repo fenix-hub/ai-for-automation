@@ -18,3 +18,13 @@ Scripts:
 | `generate_ingress_egress_per_cluster(edges_by_cluster, junction_clusters, net, vehicle_type='passenger')` | Genera ingressi e uscite di traffico per ciascun cluster e li salva in un file CSV.              | `edges_by_cluster` (dict): dizionario con gli edge per cluster; `junction_clusters` (list): etichette dei cluster per le giunzioni; `net` (oggetto SUMO): la rete SUMO caricata; `vehicle_type` (str): tipo di veicolo (default: 'passenger'). |
 | `find_border_junctions(root)`     | Identifica le giunzioni ai margini della mappa in base alle connessioni tra gli edge.             | `root` (XML root element): radice dell'albero XML della mappa.                                          |
 | `plot_clusters_and_edges(junctions, labels, edges, centroids, geographic_centroids, border_edges, all_cluster_border_edges, output_file)` | Esegue il plotting della mappa con i cluster, le giunzioni e i bordi evidenziati.                 | `junctions` (list): coordinate delle giunzioni; `labels` (list): etichette dei cluster; `edges` (list): lista degli edge; `centroids` (list): centroidi dei cluster; `geographic_centroids` (list): centroidi in coordinate geografiche; `border_edges` (list): edge di confine tra cluster; `all_cluster_border_edges` (list): edge di confine della mappa; `output_file` (str): percorso di salvataggio dell'immagine risultante. |
+
+
+## Generazione di traffic flow per simulazioni  
+
+1. installa requisiti: `pip install -r requirements.txt` 
+2. generare traffic flow: `python traffic_flow_generator.py`
+    1. selezionare gli step da eseguire usando la barra spaziatrice e premere invio per confermare
+    2. in base agli step chiederà determinate configurazioni
+3. attendere la conferma dell'output
+4. eseguire la simulazione: `python simulate.py`

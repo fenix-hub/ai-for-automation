@@ -377,7 +377,7 @@ output_path = './traffic_flows_data'
 
 POSSIBLE_SLOTS = ["07:00-10:00", "13:00-15:00", "18:00-21:00"]
 
-def main(stdscr):
+def select_slots(stdscr):
     curses.curs_set(0)
     stdscr.clear()
     stdscr.refresh()
@@ -410,9 +410,6 @@ def main(stdscr):
 
     slots = [slot for idx, slot in enumerate(POSSIBLE_SLOTS) if selected_slots[idx]]
     return slots
-
-slots = curses.wrapper(main)
-
 
 def select_steps(stdscr):
     curses.curs_set(0)
@@ -469,6 +466,9 @@ execute_steps = {
 
 cluster_id = int(input("Enter cluster id: "))
 
+if execute_steps["step2"] or execute_steps["step4"] or execute_steps["step5"] or execute_steps["step6"]:
+    slots = curses.wrapper(select_slots)
+
 """
 STEP 1
 =====
@@ -489,7 +489,7 @@ if execute_steps["step2"]:
     # year, month and day range come from terminal input
     year = int(input("Enter the year: "))
     month = int(input("Enter the month: "))
-    day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))
+    day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))    
     get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
 
 """
