@@ -15,6 +15,8 @@ import curses
 L_API_KEY = "pAfBQNn77gp9CKIP4Xa3PqTLwsAMQoT2"
 N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
 
+FATTORE_SCALA_VEICOLI = 1
+
 # Funzione per generare il file intermedio con le coordinate degli edge di partenza e arrivo
 def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, output_path): 
     csvh = csv_handler.CSVHandler()
@@ -24,7 +26,7 @@ def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, o
     traffic_flows_df = pd.read_csv(f'{traffic_flows_ref_path}/traffic_flows_cluster_{cluster_id}_ref.csv')
 
     # Rinomina delle colonne del file dei flussi di traffico
-    traffic_flows_df.columns = ['Flow ID', 'Start Edge ID', 'End Edge ID']
+    traffic_flows_df.columns = ['Flow ID', 'Start Edge ID', 'End Edge ID', 'Flow Length']
 
     # Unione del file dei flussi con le coordinate degli edge di partenza
     merged_df = traffic_flows_df.merge(edges_df[['Edge ID', 'From Lat', 'From Lon', 'To Lat', 'To Lon']],
@@ -56,6 +58,15 @@ def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, o
 
     end_counts = traffic_flows_df['End Edge ID'].value_counts().reset_index()
     end_counts.columns = ['Edge ID', 'End Count']
+
+
+    # genera un valore casuale per ogni riga
+    merged_df['Random_const'] = [random.uniform(0.5, 1.0) for _ in range(len(merged_df))]
+    merged_df['Gamma'] = 1 / merged_df['Flow Length'] * merged_df['Random_const']
+
+    # normalizza il valore di gamma sommando tutti i gama che condividono lo stesso edge
+    merged_df['Gamma_agg'] = merged_df.groupby('Start Edge ID')['Gamma'].transform('sum')
+    merged_df['Gamma_norm'] = merged_df['Gamma'] / merged_df['Gamma_agg']
 
     # Unione dei conteggi degli edge di partenza e di arrivo
     edge_counts_df = pd.merge(start_counts, end_counts, on='Edge ID', how='outer').fillna(0)
@@ -264,7 +275,7 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 600, 1200, 2400], 
         start_edge_id = row['Start Edge ID']
         end_edge_id = row['End Edge ID']
         start_count = row['Start Count']
-        
+        gamma_norm = row['Gamma_norm']
         
         # slot è passato come un time slot in formato hh:mm-hh:mm
         # bisogna trovare l'indice corrispondente nel dizionario aggregato
@@ -275,7 +286,8 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 600, 1200, 2400], 
 
         if flow_id in aggregated_data and slot_index in aggregated_data[flow_id]['avg_number_of_vehicles']:
             avg_number_of_vehicles = aggregated_data[flow_id]['avg_number_of_vehicles'][slot_index]
-            number_of_vehicles = (avg_number_of_vehicles / start_count) if start_count != 0 else 0
+            number_of_vehicles = (avg_number_of_vehicles * gamma_norm) / FATTORE_SCALA_VEICOLI  if start_count != 0 else 0
+            number_of_vehicles = round(number_of_vehicles)
             
             while True:
                 begin = random.choice(begin_values)
@@ -290,7 +302,7 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 600, 1200, 2400], 
                 'to': end_edge_id,
                 'begin': begin,
                 'end': end,
-                'number': round(number_of_vehicles)
+                'number': 1
             }
             # Aggiungi il flow alla lista
             flows.append(flow_data)
@@ -363,19 +375,7 @@ traffic_flows_path = './traffic_flows_ref'
 traffic_flow_coords = './output_flows_coords'
 output_path = './traffic_flows_data'
 
-cluster_id = int(input("Enter cluster id: "))
-
-# Date Range for Route Analysis
-# year = 2024
-# month = 7
-# day_range = range(4, 5)
-
-# year, month and day range come from terminal input
-year = int(input("Enter the year: "))
-month = int(input("Enter the month: "))
-day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))
-
-POSSIBLE_SLOTS = ["00:00-06:00", "06:00-12:00", "12:00-18:00", "18:00-23:59", "07:00-10:00", "13:00-15:00", "18:00-21:00"]
+POSSIBLE_SLOTS = ["07:00-10:00", "13:00-15:00", "18:00-21:00"]
 
 def main(stdscr):
     curses.curs_set(0)
@@ -467,6 +467,8 @@ execute_steps = {
     "step6": selected_steps[5]
 }
 
+cluster_id = int(input("Enter cluster id: "))
+
 """
 STEP 1
 =====
@@ -484,6 +486,10 @@ I dati storici vengono salvati in una cartella separata per ogni flow, non serve
 se i dati sono già stati salvati.
 """
 if execute_steps["step2"]:
+    # year, month and day range come from terminal input
+    year = int(input("Enter the year: "))
+    month = int(input("Enter the month: "))
+    day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))
     get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
 
 """
@@ -516,5 +522,6 @@ STEP 6
 Generare i file di traffic flow aggregati per tutti i flussi
 """
 if execute_steps["step6"]:
+    FATTORE_SCALA_VEICOLI = int(input("Enter the vehicle scaling factor for vehicles number (default is 1): ").strip() or 1)
     for slot in slots:
         generate_sumo_routes(cluster_id, slot)
