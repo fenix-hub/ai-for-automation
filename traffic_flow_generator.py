@@ -244,7 +244,7 @@ def load_aggregated_data(json_file_path):
 
 # Funzione per generare i file di traffic flow aggregati per tutti i flussi
 # @begin_values e @end_values sono i valori di inizio e fine dei flussi per la simulazione su SUMO
-def generate_sumo_routes(cluster_id, slot, begin_values = [0, 600, 1200, 2400, 3000, 3600, 4200, 4800], end_values = [1200, 2400, 3000, 3600, 4200, 4800, 5400, 6000]):
+def generate_sumo_routes(cluster_id, slot, begin_values = [0, 1800, 5400, 9000], end_values = [3600, 7200, 10800]):
     # Load the CSV file
     df = pd.read_csv(f'traffic_flows_data/cluster_{cluster_id}/traffic_flow_data_cluster_{cluster_id}.csv')
 

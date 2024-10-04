@@ -77,4 +77,4 @@ def update_route_file():
 update_route_file()
 
 # run this command from shell 'sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors'
-os.system('sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors')
+os.system('sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors --random-depart-offset 100 --tls.actuated.jam-threshold 4  --time-to-impatience 20  --ignore-junction-blocker 10 --scale 0.5 --human-readable-time true')

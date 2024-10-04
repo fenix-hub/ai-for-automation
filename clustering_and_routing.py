@@ -5,7 +5,11 @@ import csv
 import numpy as np
 
 # Simulation Run : 
-# sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors
+#sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors
+#sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors --random-depart-offset 100
+#sumo-gui -c sim.sumocfg --max-depart-delay 1000 --ignore-route-errors --random-depart-offset 100 
+#         --tls.actuated.jam-threshold 4  --time-to-impatience 20  --ignore-junction-blocker 10 
+#         --scale 0.5 --human-readable-time true
 
 # Caricamento file di rete SUMO
 sumo_network_file = 'bari_map.net.xml'
