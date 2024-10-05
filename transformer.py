@@ -24,11 +24,25 @@ class Transformer:
             # Get length of road
             length_in_meters = summary['lengthInMeters']
             # Calculate free flow speed in km/h
-            free_flow_speed = length_in_meters / summary['noTrafficTravelTimeInSeconds']  * 3.6
+
+            if summary['noTrafficTravelTimeInSeconds'] != 0:
+             free_flow_speed = length_in_meters / summary['noTrafficTravelTimeInSeconds'] * 3.6
+            else:
+             free_flow_speed = float('inf')
+
             # Calculate traffic speed in km/h
-            traffic_speed = length_in_meters / summary['travelTimeInSeconds']  * 3.6
+            if summary['travelTimeInSeconds'] != 0:
+               traffic_speed = length_in_meters / summary['travelTimeInSeconds'] * 3.6
+            else:
+             traffic_speed = 0  # O un altro valore di fallback (ad esempio, una velocità predefinita)
+
             # Calculate traffic density
-            density_factor = free_flow_speed / traffic_speed
+            #density_factor = free_flow_speed / traffic_speed
+            if traffic_speed != 0:
+             density_factor = free_flow_speed / traffic_speed
+            else:
+             density_factor = 0  # O un valore di fallback appropriato
+
             avg_vehicle_length = 4.6
             
             # https://www.amsi.org.au/teacher_modules/pdfs/Maths_delivers/Braking5.pdf

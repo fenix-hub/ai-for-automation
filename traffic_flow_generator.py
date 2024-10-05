@@ -12,8 +12,13 @@ import csv_handler
 import transformer
 import curses
 
+
 L_API_KEY = "pAfBQNn77gp9CKIP4Xa3PqTLwsAMQoT2"
+L1_API_KEY = "WVw4DE5L7F9wY6XIT0JCdDn1EIsCuEPt"
+L2_API_KEY = "CVchS7iltGcJfPNvkjoeFFwN0hcggJt1"
 N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
+API_KEY = L1_API_KEY #change when request limit is achived, then set FROM_FLOW_ID to 'auto'
+FROM_FLOW_ID = 0 #'auto' #set 0 if are requesting for a new cluster, set 'auto' if you want to add data to existing cluster
 
 FATTORE_SCALA_VEICOLI = 1
 
@@ -107,7 +112,7 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
     
     # Define a TomTom API Client
-    ttapi = tomtom_api.Client(api_key = N_API_KEY)
+    ttapi = tomtom_api.Client(api_key = API_KEY)
 
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
@@ -302,7 +307,7 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 1800, 5400, 9000],
                 'to': end_edge_id,
                 'begin': begin,
                 'end': end,
-                'number': 1
+                'number': number_of_vehicles
             }
             # Aggiungi il flow alla lista
             flows.append(flow_data)
@@ -490,7 +495,7 @@ if execute_steps["step2"]:
     year = int(input("Enter the year: "))
     month = int(input("Enter the month: "))
     day_range = range(int(input("Enter the start day: ")), int(input("Enter the end day: ")))    
-    get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = 'auto')
+    get_historic_data(traffic_flow_coords, cluster_id, day_range, year, month, slots, output_path, from_flow_id = FROM_FLOW_ID)
 
 """
 Step 3
