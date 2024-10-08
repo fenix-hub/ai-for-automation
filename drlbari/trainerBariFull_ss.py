@@ -93,7 +93,7 @@ def main ():
 	        "env_config": {
 	            "lstPoints": lstPointsRoute,
 	            "flagPriorityReward": False,
-	            "folder": "salvisantilio",
+	            "folder": "drlbari\salvisantilio",
 	            "pathRouteFile": "random.rou.xml",
 	            #"pathTrafficFile": "cluster_1/route_07-00_10-00.xml",
 	            "pathNetFile": "bari1_map.net.xml",
