@@ -84,15 +84,15 @@ class Routeplanner(gym.Env):
         self.sumoCmd = [
             sumoBinary,
             "--tls.all-off",
-            "--max-depart-delay", "1000",
+            #"--max-depart-delay", "1000",
             "--ignore-route-errors",
             "--random-depart-offset", "100",
             #"--tls.actuated.jam-threshold", "4",
             "--time-to-impatience", "20",
             "--ignore-junction-blocker", "10",
-            "--scale", "0.5",
+            "--scale", "0.05",
             "--human-readable-time", "true",
-            "--delay", "50",
+            #"--delay", "50",
             "-c",
             os.path.join(self.scenario, env_config["pathConfigFile"]),
             "--start",
@@ -248,9 +248,15 @@ class Routeplanner(gym.Env):
 
         # Add normalized time to the state observation
         normalized_time = self.get_normalized_time()
-
+        
+        # print(self.edges)
+        print(self.current_road)
+        print(self.edges.index(self.current_road))
         road_state = self.edges.index(self.current_road)
-        logger.debug(f"Current road: {self.current_road}")
+
+        
+       
+
 
         observation = road_state
 
@@ -298,59 +304,6 @@ class Routeplanner(gym.Env):
 
             if abs(self.angleVehicleNext - self.angleVehiclePrevious) > 50:
                 self.reward=self.reward+self.REWARD_CURVE
-    # def getRandomRoute(self):
-    #     distanceRandomRoute=10
-    #     stageResult=[]
-    #     while distanceRandomRoute<1100:
-    #         startRandomStreet = ":cluster"
-    #         while ("cluster" in startRandomStreet) or (":" in startRandomStreet):
-    #             startRandomStreet = self.edges[random.randint(0, len(self.edges) - 1)]
-
-    #         endRandomStreet = ":cluster"
-    #         while ("cluster" in endRandomStreet) or (":" in endRandomStreet):
-    #             endRandomStreet = self.edges[random.randint(0, len(self.edges) - 1)]
-    #         try:
-    #             stageResult = self.trEnv.simulation.findRoute(startRandomStreet, endRandomStreet, "routeByDistance")
-    #             distanceRandomRoute = self.trEnv.simulation.getDistanceRoad(startRandomStreet, 0, endRandomStreet, 0, False)
-    #             #if len(stageResult.edges)>0:
-    #             #    findRouteFlag = False
-    #         except Exception:
-    #             pass
-
-
-
-    #     return startRandomStreet,endRandomStreet
-
-    # # def is_edge_allowed_for_vehicle(self, edge_id):
-    # #     vehicle_type = 'passenger'
-    # #     edge = self.sumoNet.getEdge(edge_id)
-    # #     print(f"Edge object: {edge}, Type: {type(edge)}")
-    # #     print(dir(edge))  # List all attributes and methods of the edge object
-
-
-    # #     # Decomposizione delle stringhe uniche in liste
-    # #     allowed_vehicles = [v.strip().rstrip(',') for v in edge.allows.split() if v.strip()]
-    # #     disallowed_vehicles = [v.strip().rstrip(',') for v in edge.disallows.split() if v.strip()]
-    # #     print(f"Edge object: {edge}, Type: {type(edge)}")
-
-
-    # #     # Rimuove 'None' se presente
-    # #     allowed_vehicles = [v for v in allowed_vehicles if v != 'None']
-    # #     disallowed_vehicles = [v for v in disallowed_vehicles if v != 'None']
-
-    # #     # Controlla se il veicolo è disallowed
-    # #     if vehicle_type in disallowed_vehicles:
-    # #      return False
-
-    #     # Controlla se il veicolo è allowed
-    #     if vehicle_type in allowed_vehicles:
-    #      return True
-
-    #     # Se allowed è vuoto e disallowed non contiene il tipo di veicolo, è valido
-    #     if not allowed_vehicles and vehicle_type not in disallowed_vehicles:
-    #      return True
-
-    #     return False
 
     def is_edge_allowed_for_vehicle(self, edge_id):
        # Recupera l'oggetto Edge usando l'ID

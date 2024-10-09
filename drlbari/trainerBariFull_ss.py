@@ -115,6 +115,7 @@ def main ():
 	print("current time:-", ct)
 	while True:
 		result = agent.train()
+		print(result["env_runners"])
 		i=i+1
 		if j==i:
 			chkpt_file = agent.save(chkpt_root)
@@ -123,13 +124,13 @@ def main ():
 
 		print(status.format(
 			i + 1,
-			result["episode_reward_min"],
-			result["episode_reward_mean"],
-			result["episode_reward_max"],
-			result["episode_len_mean"],
+			result["env_runners"]["episode_reward_min"],
+			result["env_runners"]["episode_reward_mean"],
+			result["env_runners"]["episode_reward_max"],
+			result["env_runners"]["episode_len_mean"],
 			chkpt_file
 		))
-		if result["episode_reward_mean"] >=10:
+		if result["env_runners"]["episode_reward_mean"] >=10:
 			chkpt_file = agent.save(chkpt_root)
 			break
 
