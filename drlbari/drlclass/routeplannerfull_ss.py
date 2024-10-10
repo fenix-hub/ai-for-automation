@@ -39,10 +39,10 @@ class Routeplanner(gym.Env):
     # REWARD_ARRIVING=20
 
     #Best route
-    REWARD_DISTANCE_LESS = 0.5
-    REWARD_DISTANCE_MORE = -0.5
-    TRUNCATE_EPISODE_VALUE= 50
-    REWARD_ARRIVING= 0
+    REWARD_DISTANCE_LESS = 10
+    REWARD_DISTANCE_MORE = -2
+    TRUNCATE_EPISODE_VALUE= 150
+    REWARD_ARRIVING= 5
     REWARD_CURVE = 0
 
     #per priority
@@ -51,6 +51,7 @@ class Routeplanner(gym.Env):
     #REWARD_DISTANCE_MORE = -1
     #TRUNCATE_EPISODE_VALUE= 120
     #REWARD_CURVE = 0
+    
     #Curve
     # REWARD_DISTANCE_LESS = 1
     # REWARD_DISTANCE_MORE = -1
@@ -168,7 +169,7 @@ class Routeplanner(gym.Env):
                 break  # Esci dal ciclo se trova la strada
             except ValueError:
                 # Aspetta il prossimo step della simulazione se la strada non è ancora presente
-                print(f"Strada attuale non trovata: {self.current_road}, aspetto...")
+                #print(f"Strada attuale non trovata: {self.current_road}, aspetto...")
                 self.trEnv.simulationStep()  # Esegui uno step della simulazione
                 # Aggiorna la posizione del veicolo
                 ego_values = self.trEnv.vehicle.getSubscriptionResults(self.current_ego)
@@ -264,8 +265,8 @@ class Routeplanner(gym.Env):
         normalized_time = self.get_normalized_time()
         
         # print(self.edges)
-        print(self.current_road)
-        print(self.edges.index(self.current_road))
+        #print(self.current_road)
+        #print(self.edges.index(self.current_road))
         road_state = self.edges.index(self.current_road)
 
         

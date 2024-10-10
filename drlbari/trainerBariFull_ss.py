@@ -115,12 +115,12 @@ def main ():
 	print("current time:-", ct)
 	while True:
 		result = agent.train()
-		print(result["env_runners"])
+		#print(result["env_runners"])
 		i=i+1
-		if j==i:
-			chkpt_file = agent.save(chkpt_root)
-			print("Save Trainset n:",j)
-			j=j+5
+		# if j==i:
+		# 	chkpt_file = agent.save(chkpt_root)
+		# 	print("Save Trainset n:",j)
+		# 	j=j+5
 
 		print(status.format(
 			i + 1,
