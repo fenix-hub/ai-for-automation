@@ -31,12 +31,12 @@ class Routeplanner(gym.Env):
     baseRoute = "r_0"
 
 
-    #Curve
-    REWARD_DISTANCE_LESS = 0.5
-    REWARD_DISTANCE_MORE = 0.1
-    TRUNCATE_EPISODE_VALUE=150
-    REWARD_CURVE = -1
-    REWARD_ARRIVING=20
+    # #Curve
+    # REWARD_DISTANCE_LESS = 0.5
+    # REWARD_DISTANCE_MORE = 0.1
+    # TRUNCATE_EPISODE_VALUE=150
+    # REWARD_CURVE = -1
+    # REWARD_ARRIVING=20
 
     #Best route
     REWARD_DISTANCE_LESS = 0.5
@@ -52,12 +52,12 @@ class Routeplanner(gym.Env):
     #TRUNCATE_EPISODE_VALUE= 120
     #REWARD_CURVE = 0
     #Curve
-    REWARD_DISTANCE_LESS = 1
-    REWARD_DISTANCE_MORE = -1
-    TRUNCATE_EPISODE_VALUE=150
-    #REWARD_CURVE = -1.5
-    REWARD_CURVE = -2
-    REWARD_ARRIVING=0
+    # REWARD_DISTANCE_LESS = 1
+    # REWARD_DISTANCE_MORE = -1
+    # TRUNCATE_EPISODE_VALUE=150
+    # #REWARD_CURVE = -1.5
+    # REWARD_CURVE = -2
+    # REWARD_ARRIVING=0
 
 
     ego_idx = -1
@@ -88,7 +88,7 @@ class Routeplanner(gym.Env):
             "--ignore-route-errors",
             "--random-depart-offset", "100",
             #"--tls.actuated.jam-threshold", "4",
-            "--time-to-impatience", "20",
+            #"--time-to-impatience", "20",
             "--ignore-junction-blocker", "10",
             "--scale", "0.05",
             "--human-readable-time", "true",
@@ -159,6 +159,20 @@ class Routeplanner(gym.Env):
 
         ego_values = self.trEnv.vehicle.getSubscriptionResults(self.current_ego)
         self.current_road = ego_values[tc.VAR_ROAD_ID]
+        
+        
+        while True:
+            try:
+                # Verifica se la strada attuale è nella lista edges
+                road_index = self.edges.index(self.current_road)
+                break  # Esci dal ciclo se trova la strada
+            except ValueError:
+                # Aspetta il prossimo step della simulazione se la strada non è ancora presente
+                print(f"Strada attuale non trovata: {self.current_road}, aspetto...")
+                self.trEnv.simulationStep()  # Esegui uno step della simulazione
+                # Aggiorna la posizione del veicolo
+                ego_values = self.trEnv.vehicle.getSubscriptionResults(self.current_ego)
+                self.current_road = ego_values.get(tc.VAR_ROAD_ID, "")
 
 
 
@@ -267,6 +281,7 @@ class Routeplanner(gym.Env):
 
         return self.edges.index(self.current_road), self.reward, self.done,truncate ,{}
 
+
     def get_normalized_time(self):
         # Get current simulation time in seconds
         sim_time_ms = self.trEnv.simulation.getCurrentTime()
@@ -306,20 +321,16 @@ class Routeplanner(gym.Env):
                 self.reward=self.reward+self.REWARD_CURVE
 
     def is_edge_allowed_for_vehicle(self, edge_id):
-       # Recupera l'oggetto Edge usando l'ID
+       
        edge = self.sumoNet.getEdge(edge_id)
        vehicle_type = 'passenger'
 
-       # Controlla se l'edge consente il tipo di veicolo specificato
        allowed = edge.allows(vehicle_type)
        
-
-       # Controlla le condizioni per determinare se il veicolo è ammesso
        if allowed:
           return True
        
-       # Se il veicolo non è presente in nessuna delle liste, applica la logica desiderata
-       return False  # O false, a seconda della tua logica
+       return False  
 
     def getRandomRoute(self):
         distanceRandomRoute = 10
