@@ -39,9 +39,9 @@ class Routeplanner(gym.Env):
     # REWARD_ARRIVING=20
 
     #Best route
-    REWARD_DISTANCE_LESS = 10
-    REWARD_DISTANCE_MORE = -0.3
-    TRUNCATE_EPISODE_VALUE= 100
+    REWARD_DISTANCE_LESS = 1
+    REWARD_DISTANCE_MORE = -0.1
+    TRUNCATE_EPISODE_VALUE= 120
     REWARD_ARRIVING= 5
     REWARD_CURVE = 0
 
@@ -285,7 +285,7 @@ class Routeplanner(gym.Env):
 
     def get_normalized_time(self):
         # Get current simulation time in seconds
-        sim_time_ms = self.trEnv.simulation.getCurrentTime()
+        sim_time_ms = self.trEnv.simulation.getTime()
         sim_time_seconds = sim_time_ms / 1000
     
         # Define time slot (07:00 - 11:00) in seconds
