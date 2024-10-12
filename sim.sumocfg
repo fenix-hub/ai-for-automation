@@ -3,15 +3,11 @@
   <input>
     <net-file value="bari1_map.net.xml" />
     <route-files value="
-     traffic_flows_data/cluster_1/route_07-00_10-00.xml,
-     traffic_flows_data/cluster_2/route_07-00_10-00.xml, 
-     traffic_flows_data/cluster_3/route_07-00_10-00.xml,
-     traffic_flows_data/cluster_4/route_07-00_10-00.xml, 
-     traffic_flows_data/cluster_5/route_07-00_10-00.xml, 
-     traffic_flows_data/cluster_6/route_07-00_10-00.xml" />
+     traffic_flows_data/cluster_1/route_07-00_10-00.xml" />
   </input>
   <time>
     <begin value="0" />
     <end value="10800" />
+	<step-length value="1"/>
   </time>
 </configuration>

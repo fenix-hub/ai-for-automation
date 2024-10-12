@@ -17,7 +17,7 @@
     </processing>
 	<time>
 		<begin value="0"/>
-		<end value="10800"/>
+		<end value="32400"/>
 	</time>
     <routing>
         <device.rerouting.adaptation-steps value="18"/>

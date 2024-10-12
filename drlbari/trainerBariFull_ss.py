@@ -4,6 +4,8 @@ import drlclass.routeplannerfull_ss
 import shutil
 import csv
 import datetime
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.tune.registry import register_env
 sys.setrecursionlimit(100000)
 
 if 'SUMO_HOME' in os.environ:
@@ -20,14 +22,67 @@ else:
 
 logger = logging.getLogger(__name__)
 
+
+# First, we register the environment as usual
+def routeplanner_env_creator(env_config):
+    return drlclass.routeplannerfull_ss.Routeplanner(env_config)
+
+# Custom AlgorithmConfig class for PPO
+class CustomPPOConfig(PPOConfig):
+    def __init__(self, lstPointsRoute, folder, pathRouteFile, pathNetFile, pathConfigFile, startEdge, endEdge):
+        super().__init__()
+        # Set the environment to the registered one
+        self.environment(
+            "routeplanner_env",
+            env_config={
+                "lstPoints": lstPointsRoute,
+                "flagPriorityReward": False,
+                "folder":folder,
+                "pathRouteFile": pathRouteFile,
+                "pathNetFile": pathNetFile,
+                "pathConfigFile": pathConfigFile,
+                "startEdge": startEdge,
+                "endEdge": endEdge,
+            },
+        )
+
+        # Algorithm-specific settings for PPO
+        # self.framework("torch")  # Use PyTorch as the backend, you can switch to "tf" for TensorFlow if needed
+
+        # Add other PPO-specific settings here if needed
+        # For example:
+        self.lr = 0.0003  # Adjust the learning rate
+        self.train_batch_size = 4000
+        self.sgd_minibatch_size = 128
+        self.num_sgd_iter = 10
+        self.clip_param = 0.2
+        self.entropy_coeff = 0.01
+
+# Function to check if a checkpoint exists, then return the checkpoint file
+def load_checkpoint(agent, checkpoint_path):
+    if os.path.exists(checkpoint_path):
+        print(f"Loading checkpoint from {checkpoint_path}")
+        agent.restore(checkpoint_path)
+        # extract the checkpoint file name
+        checkpoint_files = os.listdir(checkpoint_path)
+        return checkpoint_files[0] if checkpoint_files else None
+    else:
+        print("Checkpoint file path does not exist, starting fresh.")
+        return None
+
+
+clean = False
+
 def main():
     # Directory checkpoint
     chkpt_root = "drl_model_sumo_full"
-    shutil.rmtree(chkpt_root, ignore_errors=True, onerror=None)
 
-    # Directory risultati Ray
-    ray_results = "{}/ray_results/".format(os.getenv("HOME"))
-    shutil.rmtree(ray_results, ignore_errors=True, onerror=None)
+    if clean:
+        shutil.rmtree(chkpt_root, ignore_errors=True, onerror=None)
+
+        # Directory risultati Ray
+        ray_results = "{}/ray_results/".format(os.getenv("HOME"))
+        shutil.rmtree(ray_results, ignore_errors=True, onerror=None)
 
     # Inizializza Ray
     ray.init(ignore_reinit_error=True)
@@ -38,37 +93,40 @@ def main():
     startEdge = "-30701540"
     endEdge = "-25586000#4"
 
-    agent = ppo.PPO(
-        env=drlclass.routeplannerfull_ss.Routeplanner,
-        config={
-            "env_config": {
-                "lstPoints": lstPointsRoute,
-                "flagPriorityReward": False,
-                "folder": "drlbari\salvisantilio",
-                "pathRouteFile": "random.rou.xml",
-                "pathNetFile": "bari1_map.net.xml",
-                "pathConfigFile": "bari.sumocfg",
-                "startEdge": startEdge,
-                "endEdge": endEdge,
-            },
-            "num_workers": 0,
-        },
+    # Register the custom environment with RLlib
+    register_env("routeplanner_env", routeplanner_env_creator)
+
+    # Create a config instance
+    config = CustomPPOConfig(
+        lstPointsRoute=lstPointsRoute,
+        folder="salvisantilio",
+        pathRouteFile="random.rou.xml",
+        pathNetFile="bari1_map.net.xml",
+        pathConfigFile="bari.sumocfg",
+        startEdge=startEdge,
+        endEdge=endEdge
     )
+
+    # Build the PPO agent from the config
+    agent = config.build()
+
+    # Load the checkpoint if it exists
+    chkpt_file = load_checkpoint(agent, chkpt_root)
 
     status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
 
     i = 0
     j = 5
-    chkpt_file = ""
     ct = datetime.datetime.now()
     print("current time:-", ct)
 
     # CSV file configuration
-    csv_file = "training_results.csv"
     fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length', 'Checkpoint']
+    csv_file = f'training_results_{ct.strftime("%Y%m%d-%H%M%S")}.csv'
+    results_path = "training_results/" + csv_file
 
     # Scrivi l'intestazione del CSV
-    with open(csv_file, mode='w', newline='') as file:
+    with open(results_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(fields)
 
@@ -77,31 +135,34 @@ def main():
         i += 1
 
         # Scrittura nel file CSV
-        with open(csv_file, mode='a', newline='') as file:
+        with open(results_path, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([
-                i + 1,
-                result["env_runners"]["episode_reward_min"],
-                result["env_runners"]["episode_reward_mean"],
-                result["env_runners"]["episode_reward_max"],
-                result["env_runners"]["episode_len_mean"],
+                i,
+                result["episode_reward_min"],
+                result["episode_reward_mean"],
+                result["episode_reward_max"],
+                result["episode_len_mean"],
                 chkpt_file
             ])
 
         # Stampa i risultati
         print(status.format(
-            i + 1,
-            result["env_runners"]["episode_reward_min"],
-            result["env_runners"]["episode_reward_mean"],
-            result["env_runners"]["episode_reward_max"],
-            result["env_runners"]["episode_len_mean"],
+            i,
+            result["episode_reward_min"],
+            result["episode_reward_mean"],
+            result["episode_reward_max"],
+            result["episode_len_mean"],
             chkpt_file
         ))
 
-        # Salva il checkpoint se la reward media supera 10
-        if result["env_runners"]["episode_reward_min"] >= -5:
-            chkpt_file = agent.save(chkpt_root)
-            break
+        # Save the checkpoint if reward min exceeds threshold
+        # if result["episode_reward_min"] >= -5:
+        #    _ = agent.save(chkpt_root)
+        ### (Q) Perchè sulla base del reward minimo e non del reward medio?
+
+        if result["episode_reward_mean"] >= -5:
+            _ = agent.save(chkpt_root)
 
     agent.stop()
     ct = datetime.datetime.now()
