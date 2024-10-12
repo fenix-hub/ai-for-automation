@@ -18,7 +18,7 @@ L1_API_KEY = "WVw4DE5L7F9wY6XIT0JCdDn1EIsCuEPt"
 L2_API_KEY = "CVchS7iltGcJfPNvkjoeFFwN0hcggJt1"
 N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
 API_KEY = L1_API_KEY #change when request limit is achived, then set FROM_FLOW_ID to 'auto'
-FROM_FLOW_ID = 0 #'auto' #set 0 if are requesting for a new cluster, set 'auto' if you want to add data to existing cluster
+FROM_FLOW_ID =  'auto' #set 0 if are requesting for a new cluster, set 'auto' if you want to add data to existing cluster
 
 FATTORE_SCALA_VEICOLI = 1
 
