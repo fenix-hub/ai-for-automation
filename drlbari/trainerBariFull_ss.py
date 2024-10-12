@@ -121,7 +121,7 @@ def main():
     print("current time:-", ct)
 
     # CSV file configuration
-    fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length', 'Checkpoint']
+    fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length']
     csv_file = f'training_results_{ct.strftime("%Y%m%d-%H%M%S")}.csv'
     results_path = "training_results/" + csv_file
 
