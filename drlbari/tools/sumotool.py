@@ -61,5 +61,4 @@ def numberVehicleCross(sumoNet, traciEnv, edge):
 	for itemNode in junctionOutgoing:
 		nodeName = itemNode._id
 		numberVehicleCross += (connTraci.edge.getLastStepVehicleNumber(nodeName)/0.5)
-
 	return numberVehicleCross

@@ -34,7 +34,7 @@ class CustomPPOConfig(PPOConfig):
         # Set the environment to the registered one
         self.environment(
             "routeplanner_env",
-            env_config={
+            env_config = {
                 "lstPoints": lstPointsRoute,
                 "flagPriorityReward": False,
                 "folder":folder,
@@ -43,7 +43,7 @@ class CustomPPOConfig(PPOConfig):
                 "pathConfigFile": pathConfigFile,
                 "startEdge": startEdge,
                 "endEdge": endEdge,
-            },
+            }
         )
 
         # Algorithm-specific settings for PPO
@@ -57,6 +57,8 @@ class CustomPPOConfig(PPOConfig):
         self.num_sgd_iter = 10
         self.clip_param = 0.2
         self.entropy_coeff = 0.01
+        self.num_rollout_workers = 0
+
 
 # Function to check if a checkpoint exists, then return the checkpoint file
 def load_checkpoint(agent, checkpoint_path):
@@ -121,7 +123,7 @@ def main():
     print("current time:-", ct)
 
     # CSV file configuration
-    fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length']
+    fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length', 'Timestamp', 'Checkpoint']
     csv_file = f'training_results_{ct.strftime("%Y%m%d-%H%M%S")}.csv'
     results_path = "training_results/" + csv_file
 
@@ -143,6 +145,7 @@ def main():
                 result["episode_reward_mean"],
                 result["episode_reward_max"],
                 result["episode_len_mean"],
+                datetime.datetime.fromtimestamp(result["timestamp"]),
                 chkpt_file
             ])
 
@@ -153,6 +156,7 @@ def main():
             result["episode_reward_mean"],
             result["episode_reward_max"],
             result["episode_len_mean"],
+            datetime.datetime.fromtimestamp(result["timestamp"]),
             chkpt_file
         ))
 
