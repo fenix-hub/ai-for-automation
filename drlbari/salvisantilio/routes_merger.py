@@ -7,57 +7,82 @@
 
 import xml.etree.ElementTree as ET
 import os
+import numpy as np
 
 folder = 'drlbari/salvisantilio'
 sim_end = 10800  # Valore di configurazione per lo shift
-num_replicas = 5 # Numero di repliche dei traffic flows (oltre al primo set di flow)
+num_replicas = 20 # Numero di repliche dei traffic flows (oltre al primo set di flow)
+scale_factor = 6 # Se 1, dati di traffico completi (da evitare)
+remove_zeros = True
 
-def merge_and_sort_route_files(files, output_file):
-    all_flows = []
+# def merge_and_sort_route_files(files, output_file, scale_factor, remove_zeros):
+#     all_flows = []
 
-    for file in files:
-        tree = ET.parse(file)
-        root = tree.getroot()
+#     for file in files:
+#         tree = ET.parse(file)
+#         root = tree.getroot()
         
-        for flow in root.findall('flow'):
-            all_flows.append(flow)
+#         for flow in root.findall('flow'):
+#             all_flows.append(flow)
     
-    # Ordina i flussi per l'attributo "begin"
-    all_flows.sort(key=lambda x: float(x.get('begin')))
+#     #Ordina i flussi per l'attributo "begin"
+#     all_flows.sort(key=lambda x: float(x.get('begin')))
     
-    root = ET.Element('routes')
+#     root = ET.Element('routes')
     
-    # Aggiunge i flussi ordinati all'albero
-    for flow in all_flows:
-        root.append(flow)
+#     #Aggiunge i flussi ordinati all'albero
+#     for flow in all_flows:
+#         # Dividi l'attributo "number" se esiste
+#         if 'number' in flow.attrib:
+#             original_number = int(flow.get('number'))
+#             divided_number = str(round(original_number / scale_factor))
+#             flow.set('number', divided_number)
+        
+#         root.append(flow)
     
-    # Replicazione e shift dei flussi con modifica dell'id
-    replicate_and_shift_flows(root, all_flows, num_replicas, sim_end)
+#     #Replicazione e shift dei flussi con modifica dell'id
+#     replicate_and_shift_flows(root, all_flows, num_replicas, sim_end, scale_factor)
     
-    # Scrivi il nuovo file XML con la formattazione corretta
-    indent_xml(root)
-    tree = ET.ElementTree(root)
-    tree.write(output_file, encoding='utf-8', xml_declaration=True)
+#     if remove_zeros:
+#      #Rimuove i flussi con number=0
+#      remove_zero_flows(root)
+    
+#     #Scrive il nuovo file XML con la formattazione corretta
+#     indent_xml(root)
+#     tree = ET.ElementTree(root)
+#     tree.write(output_file, encoding='utf-8', xml_declaration=True)
 
-def replicate_and_shift_flows(root, flows, num_replicas, sim_end):
+def replicate_and_shift_flows(root, flows, num_replicas, sim_end, scale_factor):
     for i in range(1, num_replicas + 1):
         for flow in flows:
-            # Creare una copia del flusso
+            #Crea una copia del flusso
             new_flow = ET.Element('flow', flow.attrib)
             
-            # Modifica il flow id aggiungendo '_idx' dove idx è l'indice corrente
+            #Modifica il flow ID aggiungendo '_idx' dove idx è l'indice corrente di replica
             new_flow.set('id', f"{flow.get('id')}_{i}")
             
-            # Aggiorna i valori di 'begin' e 'end' con lo shift
+            #Aggiorna i valori di 'begin' e 'end' con lo shift
             new_flow.set('begin', str(float(flow.get('begin')) + i * sim_end))
             new_flow.set('end', str(float(flow.get('end')) + i * sim_end))
             
-            # Aggiungi la replica al root
+            #Divide l'attributo "number" se esiste per il fattore di scala del traffico
+            if 'number' in new_flow.attrib:
+                original_number = int(new_flow.get('number'))
+                divided_number = str(round(original_number / scale_factor))
+                new_flow.set('number', divided_number)
+            
+            #Aggiunge la replica al root
             root.append(new_flow)
 
-# Formattazione dell'xml con aggiunta in coda delle repliche
-def indent_xml(elem, level=0):
+def remove_zero_flows(root):
+    #Rimuove tutti gli elementi 'flow' con number=0
+    for flow in root.findall('flow'):
+        if flow.get('number') == '0':
+            root.remove(flow)
 
+
+#Formattazione dell'xml con aggiunta in coda delle repliche
+def indent_xml(elem, level=0):
     i = "\n" + level * "  "
     if len(elem):
         if not elem.text or not elem.text.strip():
@@ -72,8 +97,58 @@ def indent_xml(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-# Lista dei file per ogni fascia oraria 
-# TODO:aggiunta manuale, eventualmente da automatizzare essendo il numero dei clusters variabile
+
+def merge_and_sort_route_files(files, output_file, scale_factor, remove_zeros):
+    all_flows = []
+
+    # Legge i flussi dai file
+    for file in files:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        
+        for flow in root.findall('flow'):
+            all_flows.append(flow)
+
+    # Conta il numero di flussi originali
+    n_original_flows =  len(all_flows)
+    print(f"Numero di flussi originali: {n_original_flows}")
+    
+    # Ordina i flussi per l'attributo "begin"
+    all_flows.sort(key=lambda x: float(x.get('begin')))
+    
+    root = ET.Element('routes')
+    
+    # Aggiunge i flussi ordinati all'albero
+    for flow in all_flows:
+        if 'number' in flow.attrib:
+            original_number = int(flow.get('number'))
+            divided_number = str(round(original_number / scale_factor))
+            flow.set('number', divided_number)
+        
+        root.append(flow)
+
+    # Replica e shift dei flussi
+    replicate_and_shift_flows(root, all_flows, num_replicas, sim_end, scale_factor)
+    
+    # Rimuove i flussi con number=0, se necessario
+    if remove_zeros:
+        remove_zero_flows(root)
+    
+    # Conta il numero di flussi dopo la replicazione
+    n_replicated_flows = len(root.findall('flow'))
+    print(f"Numero di flussi dopo la replicazione: {n_replicated_flows}")
+    
+    n=n_original_flows*(1+num_replicas)
+    n_removed_flows = str(np.absolute([n-n_replicated_flows]))
+    print(f"Totale flow rimossi: {n_removed_flows}")
+    # Scrivi il nuovo file XML con la formattazione corretta
+    indent_xml(root)
+    tree = ET.ElementTree(root)
+    tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
+
+#Lista dei file per ogni fascia oraria 
+# TODO: rendere automatizzato l'input dei file di route da unificare, poichè num_clusters variabile
 files_07_10 = [os.path.join(folder, 'cluster_0/route_07-00_10-00.xml'),
                os.path.join(folder, 'cluster_1/route_07-00_10-00.xml'),
                os.path.join(folder, 'cluster_2/route_07-00_10-00.xml'),
@@ -99,6 +174,6 @@ files_18_21 = [os.path.join(folder, 'cluster_0/route_18-00_21-00.xml'),
                os.path.join(folder, 'cluster_6/route_18-00_21-00.xml')]
 
 # Creazione dei file uniti, ordinati e con repliche
-merge_and_sort_route_files(files_07_10, os.path.join(folder, 'merged_route_07-10.xml'))
-merge_and_sort_route_files(files_13_15, os.path.join(folder, 'merged_route_13-15.xml'))
-merge_and_sort_route_files(files_18_21, os.path.join(folder, 'merged_route_18-21.xml'))
+merge_and_sort_route_files(files_07_10, os.path.join(folder, 'merged_route_07-10.xml'), scale_factor,remove_zeros)
+merge_and_sort_route_files(files_13_15, os.path.join(folder, 'merged_route_13-15.xml'), scale_factor, remove_zeros)
+merge_and_sort_route_files(files_18_21, os.path.join(folder, 'merged_route_18-21.xml'), scale_factor, remove_zeros)
