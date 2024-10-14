@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 sumo_gui = False
 sumo_path = os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo' + ("-gui" if sumo_gui else ""))
 sumoBinary = sumo_path
-if str(sys.platform) == "windows":
+if str(sys.platform) == "win32":
     sumoBinary += ".exe"
 
 class Routeplanner(gym.Env):
@@ -37,6 +37,7 @@ class Routeplanner(gym.Env):
         (10800, 21600, 2),  # 1:00 PM to 3:00 PM (slot 2)
         (21600, 32400, 3),  # 6:00 PM to 9:00 PM (slot 3)
     ]
+    SIMULATION_END_TIME = 68400
 
     # #Curve
     # REWARD_DISTANCE_LESS = 0.5
@@ -139,7 +140,10 @@ class Routeplanner(gym.Env):
         ))
 
         # aggiungi veicolo
-        self.addVehicle()
+        # self.addVehicle()
+        # Get specific route
+        self.addVehicle(self.startEdge, self.endEdge)
+
         self.steps = 0
         self.done=False
 
@@ -152,8 +156,11 @@ class Routeplanner(gym.Env):
         #self.startEdge=self.lstPoint[pathRandomIndex][0]
         #self.endEdge=self.lstPoint[pathRandomIndex][1]
 
-        self.addVehicle()
-        # tools.createRouteSumoFile(self.pathRouteFile, self.startEdge)
+        # self.addVehicle()
+        # Get specific route
+        tools.createRouteSumoFile(self.pathRouteFile, self.startEdge, self.endEdge)
+        self.addVehicle(self.startEdge, self.endEdge)
+
 
         self.optimalRoute = [self.startEdge]
 
@@ -173,8 +180,12 @@ class Routeplanner(gym.Env):
         self.current_road = ego_values[tc.VAR_ROAD_ID]
 
         # Get the traffic slot and normalized time in that slot
-        self.current_slot, self.current_time = self.get_traffic_slot_and_time()
-        
+        # #  QUESTO METODO è PER l'ADDESTRAMENTO MULTI-SLOT
+        # self.current_slot, self.current_time = self.get_traffic_slot_and_time()
+        # # Addestramento a SINGOLO SLOT
+        self.current_slot, self.current_time = self.get_traffic_time_by_slot(0)
+
+
         while True:
             try:
                 # Verifica se la strada attuale è nella lista edges
@@ -204,7 +215,9 @@ class Routeplanner(gym.Env):
 
                 self.reward = self.reward - 10
                 self.done = True
-                self.addVehicle()
+                # self.addVehicle()
+                # Get specific route
+                self.addVehicle(self.startEdge, self.endEdge)
 
             else:
                 self.trEnv.vehicle.setRoute(self.current_ego, [self.current_road, outEdgesList[action]])
@@ -239,7 +252,9 @@ class Routeplanner(gym.Env):
 
                         self.reward = self.reward - 10
                         self.done = True
-                        self.addVehicle()
+                        # self.addVehicle()
+                        # Get specific route
+                        self.addVehicle(self.startEdge, self.endEdge)
                         break
                 try:
                     self.addRewardAngle(False)
@@ -250,7 +265,9 @@ class Routeplanner(gym.Env):
                     print("Arrivato: ",self.startEdge," ", self.endEdge)
                     #print("ARRIVED: "+str(self.pathRandomIndex))
                     self.done = True
-                    self.addVehicle()
+                    # self.addVehicle()
+                    # Get specific route
+                    self.addVehicle(self.startEdge, self.endEdge)
 
 #                if self.current_road == self.startEdge:
 #                    self.reward = self.reward - 20
@@ -262,13 +279,17 @@ class Routeplanner(gym.Env):
 
             self.reward = self.reward - 50
             self.done = True
-            self.addVehicle()
+            #self.addVehicle()
+            # Get specific route
+            self.addVehicle(self.startEdge, self.endEdge)
         self.steps=self.steps+1
         if self.steps>self.TRUNCATE_EPISODE_VALUE:
             truncate=True
             self.done=True
 
-            self.addVehicle()
+            #self.addVehicle()
+            # Get specific route
+            self.addVehicle(self.startEdge, self.endEdge)
         else:
             truncate=False
 
@@ -277,18 +298,18 @@ class Routeplanner(gym.Env):
         # Combine road state and time as part of the observation
         observation = (road_state, np.array([self.current_slot]), np.array([self.current_time]))
 
-        print("observation for step: " + str(observation) + " reward: " + str(self.reward) + " done: " + str(self.done) + " truncate: " + str(truncate))
+        print("observation for step: " + str(self.steps) + " >> " + str(observation) + " reward: " + str(self.reward) + " done: " + str(self.done) + " truncate: " + str(truncate))
 
         return observation, self.reward, self.done, truncate , {}
 
     def check_endless_simulation(self):
         current_time = self.trEnv.simulation.getTime()
-        end_time_of_last_slot = self.traffic_slots[2][1]  # End time of the last slot (32400)
+        # end_time_of_last_slot = self.traffic_slots[2][1]  # End time of the last slot (32400)
 
         # If the current time exceeds the last slot, restart the simulation
-        if current_time >= end_time_of_last_slot:
+        if current_time >= self.SIMULATION_END_TIME:
             print(
-                f"Simulation time {current_time} exceeded end of last slot {end_time_of_last_slot}. Restarting simulation.")
+                f"Simulation time {current_time} exceeded end of last slot {self.SIMULATION_END_TIME}. Restarting simulation.")
 
             # Reload the simulation configuration to restart it
             self.trEnv.load(['-c', os.path.join(self.scenario, self.sumo_cfg)])
@@ -316,6 +337,24 @@ class Routeplanner(gym.Env):
                 # Normalize the time within the slot (0 to 1)
                 normalized_time = self.normalize(cycle_time, start_time, end_time)
                 return slot_id, normalized_time
+
+        # If not in a traffic slot, return 0 for no traffic and 0 for normalized time
+        return 0, 0.0
+
+    def get_traffic_time_by_slot(self, slot_id):
+        # Get the current simulation time in seconds
+        simulation_time = traci.simulation.getTime()
+
+        last_begin, last_end, last_slot = self.traffic_slots[slot_id]
+        cycle_time = simulation_time % last_end
+
+        self.current_cycle = simulation_time // last_end
+
+        # Check if current time falls within any traffic slot
+        if last_begin <= cycle_time < last_end:
+            # Normalize the time within the slot (0 to 1)
+            normalized_time = self.normalize(cycle_time, last_begin, last_end)
+            return slot_id, normalized_time
 
         # If not in a traffic slot, return 0 for no traffic and 0 for normalized time
         return 0, 0.0
@@ -414,5 +453,3 @@ class Routeplanner(gym.Env):
         self.trEnv.vehicle.setDecel(self.current_ego,60)
         self.prev_dist = self.trEnv.simulation.getDistanceRoad(self.startEdge, 0, self.endEdge, 0, False);
         self.trEnv.simulationStep()
-
-

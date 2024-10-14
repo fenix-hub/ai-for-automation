@@ -8,13 +8,7 @@
     <input>
         <net-file value="bari1_map.net.xml"/>
         <route-files value="
-            random.rou.xml,
-            cluster_1/route_07-00_10-00.xml,
-            cluster_2/route_07-00_10-00.xml, 
-            cluster_3/route_07-00_10-00.xml,
-            cluster_4/route_07-00_10-00.xml, 
-            cluster_5/route_07-00_10-00.xml, 
-            cluster_6/route_07-00_10-00.xml
+            random.rou.xml
             " />
     </input>
 
