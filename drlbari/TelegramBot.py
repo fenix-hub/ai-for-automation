@@ -2,8 +2,9 @@ import telegram
 from telegram.ext import Application
 import asyncio
 
-# Token API del tuo bot
+# Token API del bot
 bot_token = '7033631161:AAHEHy8r0bdNXAvaYNW-k-vMFjq68XG0A5Q'
+# Bot Link: https://t.me/AIxAut_training_bot
 
 async def send_telegram_message(chat_id, message):
     """
@@ -12,10 +13,9 @@ async def send_telegram_message(chat_id, message):
     :param chat_id: ID della chat su cui inviare il messaggio
     :param message: Testo del messaggio da inviare
     """
-    # Inizializza l'applicazione Telegram
     application = Application.builder().token(bot_token).build()
 
-    # Invia il messaggio asincrono
+    # Invia messaggio asincrono
     await application.bot.send_message(chat_id=chat_id, text=message)
 
 def invia_risultati_via_telegram(chat_id, risultati_stringa):
@@ -28,10 +28,10 @@ def invia_risultati_via_telegram(chat_id, risultati_stringa):
     asyncio.run(send_telegram_message(chat_id, risultati_stringa))
 
 async def get_chat_id():
-    # Inizializza l'applicazione
+
     application = Application.builder().token(bot_token).build()
 
-    # Ottieni gli aggiornamenti asincroni
+    # Aggiornamenti asincroni
     updates = await application.bot.get_updates(timeout=10)
 
     # Stampa il chat ID di ogni messaggio ricevuto
