@@ -7,6 +7,7 @@ import datetime
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune.registry import register_env
 import requests
+import TelegramBot as tg
 sys.setrecursionlimit(100000)
 
 if 'SUMO_HOME' in os.environ:
@@ -75,7 +76,7 @@ def load_checkpoint(agent, checkpoint_path):
         return None
 
 
-clean = False
+clean = True
 gui = False
 remote = True
 
@@ -92,6 +93,11 @@ def main():
 
     # Inizializza Ray
     ray.init(ignore_reinit_error=True)
+
+    # Invia un messaggio di avvio della simulazione
+    start_message = "Simulazione avviata!"
+    tg.invia_risultati_via_telegram('856246078', start_message) #L_chatID
+    tg.invia_risultati_via_telegram('282689837', start_message) #N_chatID
 
     lstPointsRoute = []
 
@@ -136,63 +142,85 @@ def main():
     with open(results_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(fields)
+    try:
+        while True:
+            result = agent.train()
+            i += 1
 
-    while True:
-        result = agent.train()
-        i += 1
+            # Scrittura nel file CSV
+            with open(results_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([
+                    i,
+                    result["env_runners"]["episode_reward_min"],
+                    result["env_runners"]["episode_reward_mean"],
+                    result["env_runners"]["episode_reward_max"],
+                    result["env_runners"]["episode_len_mean"],
+                    datetime.datetime.fromtimestamp(result["timestamp"]),
+                    chkpt_file
+                ])
 
-        # Scrittura nel file CSV
-        with open(results_path, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([
+            # Stampa i risultati
+            print(status.format(
                 i,
-                result["episode_reward_min"],
-                result["episode_reward_mean"],
-                result["episode_reward_max"],
-                result["episode_len_mean"],
+                result["env_runners"]["episode_reward_min"],
+                result["env_runners"]["episode_reward_mean"],
+                result["env_runners"]["episode_reward_max"],
+                result["env_runners"]["episode_len_mean"],
                 datetime.datetime.fromtimestamp(result["timestamp"]),
                 chkpt_file
-            ])
+            ))
 
-        # Stampa i risultati
-        print(status.format(
-            i,
-            result["episode_reward_min"],
-            result["episode_reward_mean"],
-            result["episode_reward_max"],
-            result["episode_len_mean"],
-            datetime.datetime.fromtimestamp(result["timestamp"]),
-            chkpt_file
-        ))
+            # if remote:
+            #     url = 'https://ai-for-automation-simple-backend.onrender.com/submit'
+            #     data = {
+            #         'episode': i,
+            #         'reward_min': result["episode_reward_min"],
+            #         'reward_mean': result["episode_reward_mean"],
+            #         'reward_max': result["episode_reward_max"],
+            #         'episode_length': result["episode_len_mean"],
+            #         'timestamp': ct,
+            #         #'episode_timestamp': datetime.datetime.fromtimestamp(result["timestamp"]),
+            #         'checkpoint': chkpt_file
+            #     }
 
-        if remote:
-            url = 'https://ai-for-automation-simple-backend.onrender.com/submit'
-            data = {
-                'episode': i,
-                'reward_min': result["episode_reward_min"],
-                'reward_mean': result["episode_reward_mean"],
-                'reward_max': result["episode_reward_max"],
-                'episode_length': result["episode_len_mean"],
-                'timestamp': ct,
-                #'episode_timestamp': datetime.datetime.fromtimestamp(result["timestamp"]),
-                'checkpoint': chkpt_file
-            }
+            #     response = requests.post(url, data=data)
 
-            response = requests.post(url, data=data)
+            #     print(response.text)
+            current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            telegram_message = (
+            f"Episode: {i}\n"
+            f"Reward Min: {result['env_runners']['episode_reward_min']:.2f}\n"
+            f"Reward Mean: {result['env_runners']['episode_reward_mean']:.2f}\n"
+            f"Reward Max: {result['env_runners']['episode_reward_max']:.2f}\n"
+            f"Episode Length: {result['env_runners']['episode_len_mean']:.2f}\n"
+            f"Timestamp: {current_timestamp}")
 
-            print(response.text)
+            tg.invia_risultati_via_telegram('856246078',telegram_message)
+            tg.invia_risultati_via_telegram('282689837',telegram_message)
+            
+            # Save the checkpoint if reward min exceeds threshold
+            # if result["episode_reward_min"] >= -5:
+            #    _ = agent.save(chkpt_root)
+            ### (Q) Perchè sulla base del reward minimo e non del reward medio?
 
-        # Save the checkpoint if reward min exceeds threshold
-        # if result["episode_reward_min"] >= -5:
-        #    _ = agent.save(chkpt_root)
-        ### (Q) Perchè sulla base del reward minimo e non del reward medio?
+            if result["env_runners"]["episode_reward_mean"] >= -5:
+                _ = agent.save(chkpt_root)
 
-        if result["episode_reward_mean"] >= -5:
-            _ = agent.save(chkpt_root)
+    except Exception as e:
+            error_message = f"Errore durante la simulazione: {str(e)}"
+            tg.invia_risultati_via_telegram('856246078', error_message)
+            tg.invia_risultati_via_telegram('282689837', error_message)
+            print(error_message)
+    finally:
+        # Invia un messaggio di chiusura della simulazione
+        end_message = "Simulazione interrotta."
+        tg.invia_risultati_via_telegram('856246078', end_message)
+        tg.invia_risultati_via_telegram('282689837', end_message)
+        agent.stop()
+        ct = datetime.datetime.now()
+        print("current time:-", ct)
 
-    agent.stop()
-    ct = datetime.datetime.now()
-    print("current time:-", ct)
 
 if __name__ == "__main__":
     main()
