@@ -211,12 +211,16 @@ def main():
             error_message = f"Errore durante la simulazione: {str(e)}"
             tg.invia_risultati_via_telegram('856246078', error_message)
             tg.invia_risultati_via_telegram('282689837', error_message)
+            tg.invia_file_csv_via_telegram('856246078',results_path)
+            tg.invia_file_csv_via_telegram('282689837',results_path)
             print(error_message)
     finally:
         # Invia un messaggio di chiusura della simulazione
         end_message = "Simulazione interrotta."
         tg.invia_risultati_via_telegram('856246078', end_message)
         tg.invia_risultati_via_telegram('282689837', end_message)
+        tg.invia_file_csv_via_telegram('856246078',results_path)
+        tg.invia_file_csv_via_telegram('282689837',results_path)
         agent.stop()
         ct = datetime.datetime.now()
         print("current time:-", ct)

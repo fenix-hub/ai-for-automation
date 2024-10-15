@@ -18,14 +18,18 @@ async def send_telegram_message(chat_id, message):
     # Invia messaggio asincrono
     await application.bot.send_message(chat_id=chat_id, text=message)
 
-def invia_risultati_via_telegram(chat_id, risultati_stringa):
-    """
-    Funzione che invia una stringa contenente i risultati via Telegram.
+async def send_telegram_file(chat_id, file_path):
+    # Inizializza l'applicazione Telegram
+    application = Application.builder().token(bot_token).build()
 
-    :param chat_id: ID della chat Telegram
-    :param risultati_stringa: Stringa con i risultati da inviare
-    """
+    # Invia il file CSV
+    await application.bot.send_document(chat_id=chat_id, document=open(file_path, 'rb'))
+
+def invia_risultati_via_telegram(chat_id, risultati_stringa):
     asyncio.run(send_telegram_message(chat_id, risultati_stringa))
+
+def invia_file_csv_via_telegram(chat_id, file_path):
+    asyncio.run(send_telegram_file(chat_id, file_path))
 
 async def get_chat_id():
 
@@ -41,4 +45,3 @@ async def get_chat_id():
 
 # # Per prendere i chatID
 # asyncio.run(get_chat_id())
-
