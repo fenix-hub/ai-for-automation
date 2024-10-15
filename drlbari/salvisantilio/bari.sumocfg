@@ -8,7 +8,8 @@
     <input>
         <net-file value="bari1_map.net.xml"/>
         <route-files value="
-            random.rou.xml
+            random.rou.xml,
+            merged_route_07-10.xml
             " />
     </input>
 

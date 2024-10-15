@@ -17,11 +17,12 @@ else:
 # """ Logger """
 logger = logging.getLogger(__name__)
 
-sumo_gui = False
-sumo_path = os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo' + ("-gui" if sumo_gui else ""))
-sumoBinary = sumo_path
-if str(sys.platform) == "win32":
-    sumoBinary += ".exe"
+def get_sumo_binary(gui = False) :
+    sumo_path = os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo' + ("-gui" if gui else ""))
+    sumoBinary = sumo_path
+    if str(sys.platform) == "win32":
+        sumoBinary += ".exe"
+    return sumoBinary
 
 class Routeplanner(gym.Env):
     scenario = "<scenario>"
@@ -92,9 +93,10 @@ class Routeplanner(gym.Env):
     envSumoSimulation=''.join((random.choice('abcdefghilmnopqrtsxyzpqr') for i in range(7)))
     sumo_cfg = None
     def __init__(self, env_config):
-
+        self.gui = env_config["gui"]
         self.scenario = env_config["folder"]
         self.sumo_cfg = env_config["pathConfigFile"]
+        sumoBinary = get_sumo_binary(self.gui)
 
         self.sumoCmd = [
             sumoBinary,
@@ -318,6 +320,7 @@ class Routeplanner(gym.Env):
             # self.reset()
             # Basta chiamare la funzione addVehicle() che rimuove ilveicolo attuale e lo riaggiunge
             self.addVehicle(self.startEdge, self.endEdge)
+            self.trEnv.simulationStep()
 
     def normalize(self, x, min, max):
         return (x - min) / (max - min)

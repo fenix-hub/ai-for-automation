@@ -6,6 +6,7 @@ import csv
 import datetime
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune.registry import register_env
+import requests
 sys.setrecursionlimit(100000)
 
 if 'SUMO_HOME' in os.environ:
@@ -29,7 +30,7 @@ def routeplanner_env_creator(env_config):
 
 # Custom AlgorithmConfig class for PPO
 class CustomPPOConfig(PPOConfig):
-    def __init__(self, lstPointsRoute, folder, pathRouteFile, pathNetFile, pathConfigFile, startEdge, endEdge):
+    def __init__(self, lstPointsRoute, folder, pathRouteFile, pathNetFile, pathConfigFile, startEdge, endEdge, gui):
         super().__init__()
         # Set the environment to the registered one
         self.environment(
@@ -43,6 +44,7 @@ class CustomPPOConfig(PPOConfig):
                 "pathConfigFile": pathConfigFile,
                 "startEdge": startEdge,
                 "endEdge": endEdge,
+                "gui": gui
             }
         )
 
@@ -74,6 +76,8 @@ def load_checkpoint(agent, checkpoint_path):
 
 
 clean = False
+gui = False
+remote = True
 
 def main():
     # Directory checkpoint
@@ -106,7 +110,8 @@ def main():
         pathNetFile="bari1_map.net.xml",
         pathConfigFile="bari.sumocfg",
         startEdge=startEdge,
-        endEdge=endEdge
+        endEdge=endEdge,
+        gui = gui
     )
 
     # Build the PPO agent from the config
@@ -159,6 +164,23 @@ def main():
             datetime.datetime.fromtimestamp(result["timestamp"]),
             chkpt_file
         ))
+
+        if remote:
+            url = 'https://ai-for-automation-simple-backend.onrender.com/submit'
+            data = {
+                'episode': i,
+                'reward_min': result["episode_reward_min"],
+                'reward_mean': result["episode_reward_mean"],
+                'reward_max': result["episode_reward_max"],
+                'episode_length': result["episode_len_mean"],
+                'timestamp': ct,
+                #'episode_timestamp': datetime.datetime.fromtimestamp(result["timestamp"]),
+                'checkpoint': chkpt_file
+            }
+
+            response = requests.post(url, data=data)
+
+            print(response.text)
 
         # Save the checkpoint if reward min exceeds threshold
         # if result["episode_reward_min"] >= -5:
