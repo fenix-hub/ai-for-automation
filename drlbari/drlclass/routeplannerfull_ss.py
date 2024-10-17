@@ -50,7 +50,7 @@ class Routeplanner(gym.Env):
     #Best route
     REWARD_DISTANCE_LESS = 1
     REWARD_DISTANCE_MORE = -0.1
-    TRUNCATE_EPISODE_VALUE= 120
+    TRUNCATE_EPISODE_VALUE= 130
     REWARD_ARRIVING= 5
     REWARD_CURVE = 0
 
@@ -318,7 +318,7 @@ class Routeplanner(gym.Env):
 
             ### !! NON RESETTARE L'AGENT!
             # self.reset()
-            # Basta chiamare la funzione addVehicle() che rimuove ilveicolo attuale e lo riaggiunge
+            # Basta chiamare la funzione addVehicle() che rimuove il veicolo attuale e lo riaggiunge
             self.addVehicle(self.startEdge, self.endEdge)
             self.trEnv.simulationStep()
 
