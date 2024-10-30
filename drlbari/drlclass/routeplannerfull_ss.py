@@ -53,6 +53,9 @@ class Routeplanner(gym.Env):
     TRUNCATE_EPISODE_VALUE= 130
     REWARD_ARRIVING= 5
     REWARD_CURVE = 0
+    TRAFFIC_PENALTY = 0.3
+    NO_TRAFFIC_REWARD = 0
+    TRAFFIC_IDX= 5
 
     #per priority
     #REWARD_ARRIVING= 20
@@ -110,6 +113,8 @@ class Routeplanner(gym.Env):
             #"--scale", "0.05",
             "--human-readable-time", "true",
             #"--delay", "50",
+            "--no-warnings", 
+            "--no-step-log",
             "-c",
             os.path.join(self.scenario, self.sumo_cfg),
             "--start",
@@ -227,16 +232,17 @@ class Routeplanner(gym.Env):
                 self.prev_road = self.current_road
                 self.current_road = outEdgesList[action]
                 self.optimalRoute.append(self.prev_road)
+                self.addRewardTrafficDensity()
 
                 self.addRewardDistance(self.current_road)
                 try:
                     self.addRewardAngle(True)
                 except:
                     print("********")
-                if self.flagPriorityReward:
-                    self.addRewardPriorityStreet(self.current_road)
+                # if self.flagPriorityReward:
+                #     self.addRewardPriorityStreet(self.current_road)
 
-                self.addRewardTraffic(self.current_road)
+                
                 #print("Velocità max: ",str(self.trEnv.vehicle.getMaxSpeed(self.current_ego)))
                 #print("Velocità corrente: ", str(self.trEnv.vehicle.getSpeed(self.current_ego)))
                 edgeInfo = self.sumoNet.getEdge(self.current_road)
@@ -416,13 +422,19 @@ class Routeplanner(gym.Env):
 
         return startRandomStreet, endRandomStreet
 
-    def addRewardPriorityStreet(self,edge):
-        if edge in sp.STREETPRIORITY:
-            self.reward = self.reward+sp.STREETPRIORITY[edge]
-            #print("Priority")s
-    def addRewardTraffic(self,edge):
-        if edge in st.STREETTRAFFIC:
-            self.reward = self.reward+st.STREETTRAFFIC[edge]
+
+    def addRewardTrafficDensity(self):
+    # ottiene il numero di veicoli sulla strada corrente
+        vehicle_count = self.trEnv.edge.getLastStepVehicleNumber(self.current_road)
+
+        if vehicle_count >= self.TRAFFIC_IDX:  # indice di traffico elevato
+            # reward di penalizzazione proporzionale alla quantità di traffico
+            self.reward -= self.TRAFFIC_PENALTY * vehicle_count
+            print('Traffic density HIGH, penalty applied')    
+        else:
+            self.reward += self.NO_TRAFFIC_REWARD  # ricompensa per traffico basso
+            print('Traffic density low, reward applied')
+
 
     def addVehicle(self, start_edge = None, end_edge = None):
         random_route="r_0"

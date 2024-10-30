@@ -51,7 +51,7 @@ class CustomPPOConfig(PPOConfig):
         )
 
         # Algorithm-specific settings for PPO
-        self.framework("tf")  # Use PyTorch as the backend, you can switch to "tf" for TensorFlow if needed
+        #self.framework("tf")  # Use PyTorch as the backend if commented, you can switch to "tf" for TensorFlow if needed, comment out if you prefer TensorFlow
 
         # Add other PPO-specific settings here if needed
         # For example:
@@ -70,8 +70,8 @@ class CustomPPOConfig(PPOConfig):
         
         #     print("CUDA is not available. Running on CPU.")
         #     ray.init()
-        self.num_gpus = 1
-        self.num_gpus_per_worker = 1
+        # self.num_gpus = 0
+        # self.num_gpus_per_worker = 0
 
 
 # Function to check if a checkpoint exists, then return the checkpoint file
@@ -158,7 +158,7 @@ def main():
             result = agent.train()
             i += 1
 
-            result_values = result if ray.__version__ <= "2.8.1" else result["env_runners"]
+            result_values = result if ray.__version__ < "2.37.0" else result["env_runners"]
 
             # Scrittura nel file CSV
             with open(results_path, mode='a', newline='') as file:
@@ -184,22 +184,6 @@ def main():
                 chkpt_file
             ))
 
-            # if remote:
-            #     url = 'https://ai-for-automation-simple-backend.onrender.com/submit'
-            #     data = {
-            #         'episode': i,
-            #         'reward_min': result["episode_reward_min"],
-            #         'reward_mean': result["episode_reward_mean"],
-            #         'reward_max': result["episode_reward_max"],
-            #         'episode_length': result["episode_len_mean"],
-            #         'timestamp': ct,
-            #         #'episode_timestamp': datetime.datetime.fromtimestamp(result["timestamp"]),
-            #         'checkpoint': chkpt_file
-            #     }
-
-            #     response = requests.post(url, data=data)
-
-            #     print(response.text)
             current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             telegram_message = (
             f"Episode: {i}\n"
