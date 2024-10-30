@@ -183,9 +183,9 @@ class Routeplanner(gym.Env):
 
         # Get the traffic slot and normalized time in that slot
         # #  QUESTO METODO è PER l'ADDESTRAMENTO MULTI-SLOT
-        # self.current_slot, self.current_time = self.get_traffic_slot_and_time()
+        self.current_slot, self.current_time = self.get_traffic_slot_and_time()
         # # Addestramento a SINGOLO SLOT
-        self.current_slot, self.current_time = self.get_traffic_time_by_slot(0)
+        # self.current_slot, self.current_time = self.get_traffic_slot_and_time(0)
 
 
         while True:

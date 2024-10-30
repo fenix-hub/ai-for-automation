@@ -8,6 +8,7 @@ from ray.rllib.algorithms.ppo import PPOConfig
 from ray.tune.registry import register_env
 import requests
 import TelegramBot as tg
+import tensorflow as tf
 sys.setrecursionlimit(100000)
 
 if 'SUMO_HOME' in os.environ:
@@ -50,7 +51,7 @@ class CustomPPOConfig(PPOConfig):
         )
 
         # Algorithm-specific settings for PPO
-        # self.framework("torch")  # Use PyTorch as the backend, you can switch to "tf" for TensorFlow if needed
+        self.framework("tf")  # Use PyTorch as the backend, you can switch to "tf" for TensorFlow if needed
 
         # Add other PPO-specific settings here if needed
         # For example:
@@ -61,6 +62,16 @@ class CustomPPOConfig(PPOConfig):
         self.clip_param = 0.2
         self.entropy_coeff = 0.01
         self.num_rollout_workers = 0
+        # if use_gpu:
+        #     print(f"CUDA is available. Number of GPUs: {torch.cuda.device_count()}")
+        #     print("GPU Name:", torch.cuda.get_device_name(0))
+        #     ray.init(num_gpus=1)
+        # else:
+        
+        #     print("CUDA is not available. Running on CPU.")
+        #     ray.init()
+        self.num_gpus = 1
+        self.num_gpus_per_worker = 1
 
 
 # Function to check if a checkpoint exists, then return the checkpoint file
@@ -147,15 +158,17 @@ def main():
             result = agent.train()
             i += 1
 
+            result_values = result if ray.__version__ <= "2.8.1" else result["env_runners"]
+
             # Scrittura nel file CSV
             with open(results_path, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([
                     i,
-                    result["env_runners"]["episode_reward_min"],
-                    result["env_runners"]["episode_reward_mean"],
-                    result["env_runners"]["episode_reward_max"],
-                    result["env_runners"]["episode_len_mean"],
+                    result_values["episode_reward_min"],
+                    result_values["episode_reward_mean"],
+                    result_values["episode_reward_max"],
+                    result_values["episode_len_mean"],
                     datetime.datetime.fromtimestamp(result["timestamp"]),
                     chkpt_file
                 ])
@@ -163,10 +176,10 @@ def main():
             # Stampa i risultati
             print(status.format(
                 i,
-                result["env_runners"]["episode_reward_min"],
-                result["env_runners"]["episode_reward_mean"],
-                result["env_runners"]["episode_reward_max"],
-                result["env_runners"]["episode_len_mean"],
+                result_values["episode_reward_min"],
+                result_values["episode_reward_mean"],
+                result_values["episode_reward_max"],
+                result_values["episode_len_mean"],
                 datetime.datetime.fromtimestamp(result["timestamp"]),
                 chkpt_file
             ))
@@ -190,10 +203,10 @@ def main():
             current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             telegram_message = (
             f"Episode: {i}\n"
-            f"Reward Min: {result['env_runners']['episode_reward_min']:.2f}\n"
-            f"Reward Mean: {result['env_runners']['episode_reward_mean']:.2f}\n"
-            f"Reward Max: {result['env_runners']['episode_reward_max']:.2f}\n"
-            f"Episode Length: {result['env_runners']['episode_len_mean']:.2f}\n"
+            f"Reward Min: {result_values['episode_reward_min']:.2f}\n"
+            f"Reward Mean: {result_values['episode_reward_mean']:.2f}\n"
+            f"Reward Max: {result_values['episode_reward_max']:.2f}\n"
+            f"Episode Length: {result_values['episode_len_mean']:.2f}\n"
             f"Timestamp: {current_timestamp}")
 
             tg.invia_risultati_via_telegram('856246078',telegram_message)
@@ -204,7 +217,7 @@ def main():
             #    _ = agent.save(chkpt_root)
             ### (Q) Perchè sulla base del reward minimo e non del reward medio?
 
-            if result["env_runners"]["episode_reward_mean"] >= -5:
+            if result_values["episode_reward_mean"] >= -5:
                 _ = agent.save(chkpt_root)
 
     except Exception as e:
