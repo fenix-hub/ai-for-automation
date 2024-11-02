@@ -41,7 +41,7 @@ def extract_flow_coordinates_for_clusters(number_of_clusters, csv_file_path):
     edges_dict = load_edges_coordinates(csv_file_path)
 
     for cluster_id in range(0, number_of_clusters):
-        xml_file_path = f'traffic_flows_cluster_{cluster_id}.xml'
+        xml_file_path = f'traffic_flows_ref/traffic_flows_cluster_{cluster_id}_ref.csv' 
         output_csv_path = f'output_flows_coords/output_flows_with_coordinates_cluster_{cluster_id}.csv'
         
         flows = extract_flows_from_xml(xml_file_path)

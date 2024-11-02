@@ -48,14 +48,14 @@ class Routeplanner(gym.Env):
     # REWARD_ARRIVING=20
 
     #Best route
-    REWARD_DISTANCE_LESS = 1
-    REWARD_DISTANCE_MORE = -0.1
-    TRUNCATE_EPISODE_VALUE= 130
+    REWARD_DISTANCE_LESS = 0.5
+    REWARD_DISTANCE_MORE = -0.5
+    TRUNCATE_EPISODE_VALUE= 120
     REWARD_ARRIVING= 5
     REWARD_CURVE = 0
-    TRAFFIC_PENALTY = 0.3
+    TRAFFIC_PENALTY = 0.2
     NO_TRAFFIC_REWARD = 0
-    TRAFFIC_IDX= 5
+    TRAFFIC_IDX= 4
 
     #per priority
     #REWARD_ARRIVING= 20
@@ -313,14 +313,17 @@ class Routeplanner(gym.Env):
     def check_endless_simulation(self):
         current_time = self.trEnv.simulation.getTime()
         # end_time_of_last_slot = self.traffic_slots[2][1]  # End time of the last slot (32400)
+        
 
         # If the current time exceeds the last slot, restart the simulation
         if current_time >= self.SIMULATION_END_TIME:
             print(
                 f"Simulation time {current_time} exceeded end of last slot {self.SIMULATION_END_TIME}. Restarting simulation.")
-
-            # Reload the simulation configuration to restart it
-            self.trEnv.load(['-c', os.path.join(self.scenario, self.sumo_cfg)])
+            
+            # Restart the simulation
+            #self.trEnv.load(['-c', os.path.join(self.scenario, self.sumo_cfg)])
+            load_flags = self.sumoCmd[1:] # flags per il reload della simulazione
+            self.trEnv.load(load_flags)
 
             ### !! NON RESETTARE L'AGENT!
             # self.reset()
@@ -430,10 +433,10 @@ class Routeplanner(gym.Env):
         if vehicle_count >= self.TRAFFIC_IDX:  # indice di traffico elevato
             # reward di penalizzazione proporzionale alla quantità di traffico
             self.reward -= self.TRAFFIC_PENALTY * vehicle_count
-            print('Traffic density HIGH, penalty applied')    
+            print(f"HIGH TRAFFIC - density: {vehicle_count}, penalty reward: -{self.TRAFFIC_PENALTY * vehicle_count}")    
         else:
             self.reward += self.NO_TRAFFIC_REWARD  # ricompensa per traffico basso
-            print('Traffic density low, reward applied')
+            #print('Traffic density low, reward applied')
 
 
     def addVehicle(self, start_edge = None, end_edge = None):

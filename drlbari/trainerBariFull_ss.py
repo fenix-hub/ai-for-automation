@@ -86,10 +86,10 @@ def load_checkpoint(agent, checkpoint_path):
         print("Checkpoint file path does not exist, starting fresh.")
         return None
 
-
-clean = True
-gui = False
-remote = True
+# Simulation preferences
+clean = False # Clean the checkpoint directory before starting the simulation
+gui = False # Use the graphical user interface for the simulation
+telegram = True # Use Telegram bot for sending results
 
 def main():
     # Directory checkpoint
@@ -107,14 +107,16 @@ def main():
 
     # Invia un messaggio di avvio della simulazione
     start_message = "Simulazione avviata!"
-    tg.invia_risultati_via_telegram('856246078', start_message) #L_chatID
-    tg.invia_risultati_via_telegram('282689837', start_message) #N_chatID
+    if telegram:
+        tg.invia_risultati_via_telegram('856246078', start_message) #L_chatID
+        tg.invia_risultati_via_telegram('282689837', start_message) #N_chatID
 
     lstPointsRoute = []
 
     # Configurazione del percorso
     startEdge = "-30701540"
-    endEdge = "-25586000#4"
+    endEdge = "-96606441#3"
+    #endEdge = "-25586000#4"
 
     # Register the custom environment with RLlib
     register_env("routeplanner_env", routeplanner_env_creator)
@@ -192,9 +194,10 @@ def main():
             f"Reward Max: {result_values['episode_reward_max']:.2f}\n"
             f"Episode Length: {result_values['episode_len_mean']:.2f}\n"
             f"Timestamp: {current_timestamp}")
-
-            tg.invia_risultati_via_telegram('856246078',telegram_message)
-            tg.invia_risultati_via_telegram('282689837',telegram_message)
+            
+            if telegram:
+                tg.invia_risultati_via_telegram('856246078',telegram_message)
+                tg.invia_risultati_via_telegram('282689837',telegram_message)
             
             # Save the checkpoint if reward min exceeds threshold
             # if result["episode_reward_min"] >= -5:
@@ -206,18 +209,20 @@ def main():
 
     except Exception as e:
             error_message = f"Errore durante la simulazione: {str(e)}"
-            tg.invia_risultati_via_telegram('856246078', error_message)
-            tg.invia_risultati_via_telegram('282689837', error_message)
-            tg.invia_file_csv_via_telegram('856246078',results_path)
-            tg.invia_file_csv_via_telegram('282689837',results_path)
+            if telegram:
+                tg.invia_risultati_via_telegram('856246078', error_message)
+                tg.invia_risultati_via_telegram('282689837', error_message)
+                tg.invia_file_csv_via_telegram('856246078',results_path)
+                tg.invia_file_csv_via_telegram('282689837',results_path)
             print(error_message)
     finally:
         # Invia un messaggio di chiusura della simulazione
         end_message = "Simulazione interrotta."
-        tg.invia_risultati_via_telegram('856246078', end_message)
-        tg.invia_risultati_via_telegram('282689837', end_message)
-        tg.invia_file_csv_via_telegram('856246078',results_path)
-        tg.invia_file_csv_via_telegram('282689837',results_path)
+        if telegram:
+            tg.invia_risultati_via_telegram('856246078', end_message)
+            tg.invia_risultati_via_telegram('282689837', end_message)
+            tg.invia_file_csv_via_telegram('856246078',results_path)
+            tg.invia_file_csv_via_telegram('282689837',results_path)
         agent.stop()
         ct = datetime.datetime.now()
         print("current time:-", ct)
