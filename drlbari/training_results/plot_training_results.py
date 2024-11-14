@@ -1,3 +1,5 @@
+#Please run in the folder training_results
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
@@ -49,5 +51,5 @@ def plot_metrics_from_csv(csv_file):
     
 
 # Esempio di utilizzo della funzione:
-results_path = 'training_results/training_results_20241112-233741.csv'
+results_path = 'training_results_20241112-233741.csv'
 plot_metrics_from_csv(results_path)
