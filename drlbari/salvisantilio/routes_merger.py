@@ -8,13 +8,14 @@
 import xml.etree.ElementTree as ET
 import os
 import numpy as np
+import random
 
-folder = 'drlbari/salvisantilio'
-sim_end = 10800  # Valore di configurazione per lo shift
-num_replicas = 20 # Numero di repliche dei traffic flows (oltre al primo set di flow)
-scale_factor = 6 # Se 1, dati di traffico completi (da evitare)
-remove_zeros = True
-all_routes_file = True # Se True, crea un unico file di routes con tutte le fasce orarie
+folder = 'salvisantilio' #'drlbari/salvisantilio'
+sim_end = 10800  # Shift value
+num_replicas = 20 # Number of traffic flows replicas (first set not included)
+scale_factor = 6 # If 1, original traffic conditions are considered (avoid)
+remove_zeros = True # When scaling is applied, many flows converge to zero and could be removed
+all_routes_file = True # If True, generates one single file containing all time slots' flows concatenated
 
 def replicate_and_shift_flows(root, flows, num_replicas, sim_end, scale_factor):
     for i in range(1, num_replicas + 1):
@@ -23,7 +24,8 @@ def replicate_and_shift_flows(root, flows, num_replicas, sim_end, scale_factor):
             new_flow = ET.Element('flow', flow.attrib)
             
             #Modifica il flow ID aggiungendo '_idx' dove idx è l'indice corrente di replica
-            new_flow.set('id', f"{flow.get('id')}_{i}")
+            #new_flow.set('id', f"{flow.get('id')}_{i+random.randint(1,10000)}")
+            new_flow.set('id', f"{flow.get('id')}_{i + random.randint(1, 10000)}")
             
             #Aggiorna i valori di 'begin' e 'end' con lo shift
             new_flow.set('begin', str(float(flow.get('begin')) + i * sim_end))
@@ -110,24 +112,89 @@ def merge_and_sort_route_files(files, output_file, scale_factor, remove_zeros):
     tree.write(output_file, encoding='utf-8', xml_declaration=True)
 
 
+# def merge_and_shift_all_route_files(files_07_10, files_13_15, files_18_21, output_file, num_replicas, sim_end, scale_factor, remove_zeros):
+#     all_flows = []
+
+#     # Funzione per aggiungere flussi e applicare uno shift temporale
+#     def add_shifted_flows(file_list, shift):
+#         for file in file_list:
+#             tree = ET.parse(file)
+#             root = tree.getroot()
+#             for flow in root.findall('flow'):
+#                 # Applica lo shift ai valori di begin e end
+#                 flow.set('begin', str(float(flow.get('begin')) + shift))
+#                 flow.set('end', str(float(flow.get('end')) + shift))
+#                 all_flows.append(flow)
+
+#     # Aggiunge i flussi di ciascuna fascia oraria, con lo shift appropriato
+#     add_shifted_flows(files_07_10, shift=0)                 # Nessuno shift per 07-10
+#     add_shifted_flows(files_13_15, shift=sim_end)            # Shift per 13-15
+#     add_shifted_flows(files_18_21, shift=2 * sim_end)        # Shift per 18-21
+
+#     # Ordina tutti i flussi per l'attributo "begin"
+#     all_flows.sort(key=lambda x: float(x.get('begin')))
+
+#     root = ET.Element('routes')
+
+#     # Aggiunge i flussi ordinati all'albero
+#     for flow in all_flows:
+#         if 'number' in flow.attrib:
+#             original_number = int(flow.get('number'))
+#             divided_number = str(round(original_number / scale_factor))
+#             flow.set('number', divided_number)
+        
+#         root.append(flow)
+
+#     # Replica e shift dei flussi
+#     replicate_and_shift_flows(root, all_flows, num_replicas, sim_end, scale_factor)
+
+#     # Rimuove i flussi con number=0, se necessario
+#     if remove_zeros:
+#         remove_zero_flows(root)
+
+#     # Scrive il nuovo file XML con la formattazione corretta
+#     indent_xml(root)
+#     tree = ET.ElementTree(root)
+#     tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
 def merge_and_shift_all_route_files(files_07_10, files_13_15, files_18_21, output_file, num_replicas, sim_end, scale_factor, remove_zeros):
     all_flows = []
-
+    
+    # Fasce orarie definite
+    time_slots = {
+        '07-00_10-00': '710',
+        '13-00_15-00': '1315',
+        '18-00_21-00': '1821'
+    }
+    
     # Funzione per aggiungere flussi e applicare uno shift temporale
     def add_shifted_flows(file_list, shift):
         for file in file_list:
+            # Determina la fascia oraria dal nome del file
+            time_slot = determine_time_slot(file, time_slots)
+            
+            # Legge il file XML e applica lo shift temporale
             tree = ET.parse(file)
             root = tree.getroot()
             for flow in root.findall('flow'):
                 # Applica lo shift ai valori di begin e end
                 flow.set('begin', str(float(flow.get('begin')) + shift))
                 flow.set('end', str(float(flow.get('end')) + shift))
+                
+                # Aggiungi la fascia oraria all'ID del flusso
+                flow_id = flow.get('id')
+                parts = flow_id.split('_')
+                num_cluster = parts[1]
+                num_flow = parts[2]
+                new_flow_id = f"flow_{num_cluster}_{num_flow}_{time_slot}"
+                flow.set('id', new_flow_id)
+                
                 all_flows.append(flow)
 
     # Aggiunge i flussi di ciascuna fascia oraria, con lo shift appropriato
-    add_shifted_flows(files_07_10, shift=0)                 # Nessuno shift per 07-10
-    add_shifted_flows(files_13_15, shift=sim_end)            # Shift per 13-15
-    add_shifted_flows(files_18_21, shift=2 * sim_end)        # Shift per 18-21
+    add_shifted_flows(files_07_10, shift=0)                # Nessuno shift per 07-10
+    add_shifted_flows(files_13_15, shift=sim_end)           # Shift per 13-15
+    add_shifted_flows(files_18_21, shift=2 * sim_end)       # Shift per 18-21
 
     # Ordina tutti i flussi per l'attributo "begin"
     all_flows.sort(key=lambda x: float(x.get('begin')))
@@ -154,6 +221,16 @@ def merge_and_shift_all_route_files(files_07_10, files_13_15, files_18_21, outpu
     indent_xml(root)
     tree = ET.ElementTree(root)
     tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
+# Funzione per determinare la fascia oraria dal nome del file
+def determine_time_slot(file_path, time_slots):
+    file_name = os.path.basename(file_path)
+    time_slot_key = file_name.split('route_')[1].split('.xml')[0]
+    
+    if time_slot_key in time_slots:
+        return time_slots[time_slot_key]
+    else:
+        raise ValueError(f"Unknown time slot for file {file_path}")
 
 #Lista dei file per ogni fascia oraria 
 # TODO: rendere automatizzato l'input dei file di route da unificare, poichè num_clusters variabile

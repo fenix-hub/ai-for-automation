@@ -7,6 +7,7 @@ class Client:
         self.api_key = api_key
         self.base_url = "https://api.tomtom.com"
 
+
     def get_route_summary(self, start, end, via_points, departure_time):
         endpoint = "/routing/1/calculateRoute/{start}:{via}:{end}/json".format(start=start, end=end, via=":".join(via_points))
         url = self.base_url + endpoint
@@ -27,9 +28,10 @@ class Client:
                 summary["points"] = data["routes"][0]["legs"][0]["points"]
                 return summary
         raise Exception(f"{response.status_code} - {response.text}")
-        return None        
+        return None
 
 
+# TODO:This function is not used in any of the other scripts. You can remove it if it's not needed (?)
     def get_location(self, address):
         endpoint = "/search/2/geocode/{address}.json".format(address=address)
         url = self.base_url + endpoint

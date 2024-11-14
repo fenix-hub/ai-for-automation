@@ -20,44 +20,42 @@ N_API_KEY = "SdbkkAPVV6GxzS7beuYj8mqYnSRWgUmx"
 API_KEY = L2_API_KEY #change when request limit is achived, then set FROM_FLOW_ID to 'auto'
 FROM_FLOW_ID =  'auto' #set 0 if are requesting for a new cluster, set 'auto' if you want to add data to existing cluster
 
-FATTORE_SCALA_VEICOLI = 1
+# It's highly recommended to set this parameter to 1, to store original raw data.
+# The opportunity to scale traffic conditions is given by routes_merger.py, where it's possible to
+# scale traffic data by a factor, preserving original data. 
+Traffic_Scale_Factor = 1 
 
 # Funzione per generare il file intermedio con le coordinate degli edge di partenza e arrivo
+# TODO:Questa funzione utilizza i file traffic_flows_ref + edges.csv per associare agli ID le coordinate geo. degli edge di partenza e arrivo,
+# ma questa funzione viene gia fatta in precedenza: USARE FILE output_flows_with_coordinates.csv a cui aggiungere le costanti varie.
 def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, output_path): 
     csvh = csv_handler.CSVHandler()
     
-    # Caricamento dei file CSV
+    # Loading of CSV file
     edges_df = pd.read_csv(edges_file_path)
     traffic_flows_df = pd.read_csv(f'{traffic_flows_ref_path}/traffic_flows_cluster_{cluster_id}_ref.csv')
 
-    # Rinomina delle colonne del file dei flussi di traffico
     traffic_flows_df.columns = ['Flow ID', 'Start Edge ID', 'End Edge ID', 'Flow Length']
 
-    # Unione del file dei flussi con le coordinate degli edge di partenza
     merged_df = traffic_flows_df.merge(edges_df[['Edge ID', 'From Lat', 'From Lon', 'To Lat', 'To Lon']],
                                     how='left',
                                     left_on='Start Edge ID',
                                     right_on='Edge ID').drop(columns='Edge ID')
 
-    # Rinomina delle colonne per chiarezza
+    # Column renaming
     merged_df = merged_df.rename(columns={'From Lat': 'Start From Lat', 'From Lon': 'Start From Lon',
                                         'To Lat': 'Start To Lat', 'To Lon': 'Start To Lon'})
 
-    # Unione del file dei flussi con le coordinate degli edge di arrivo
     merged_df = merged_df.merge(edges_df[['Edge ID', 'From Lat', 'From Lon', 'To Lat', 'To Lon']],
                                 how='left',
                                 left_on='End Edge ID',
                                 right_on='Edge ID').drop(columns='Edge ID')
 
-    # Rinomina delle colonne per chiarezza
+    # Columns renaming
     merged_df = merged_df.rename(columns={'From Lat': 'End From Lat', 'From Lon': 'End From Lon',
                                         'To Lat': 'End To Lat', 'To Lon': 'End To Lon'})
 
-    # Salvataggio del file intermedio con le coordinate
-    # intermediate_file_path = '/mnt/data/traffic_flows_with_coordinates.csv'
-    # merged_df.to_csv(intermediate_file_path, index=False)
-
-    # Step 2: Conteggio delle occorrenze di ogni edge come edge di partenza o di arrivo
+    # Step 2: Couts of single start/end edges usages and append them to dataframe 
     start_counts = traffic_flows_df['Start Edge ID'].value_counts().reset_index()
     start_counts.columns = ['Edge ID', 'Start Count']
 
@@ -65,27 +63,26 @@ def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, o
     end_counts.columns = ['Edge ID', 'End Count']
 
 
-    # genera un valore casuale per ogni riga
+    # Generates a random constant for each route (traffic noise added for each route)
+    # Gamma is a parameter which controls the amount of randomness in the generated routes, giving to each route
+    # a unique noise level, which is partially inversly proportional to the length of the route.
+    # If random constant is set to 1 or to any constant, all routes will have no noise (because gamma is normalized below)
     merged_df['Random_const'] = [random.uniform(0.5, 1.0) for _ in range(len(merged_df))]
     merged_df['Gamma'] = 1 / merged_df['Flow Length'] * merged_df['Random_const']
 
-    # normalizza il valore di gamma sommando tutti i gama che condividono lo stesso edge
+    # Normalization of gamma for all routes which share the same start edge
     merged_df['Gamma_agg'] = merged_df.groupby('Start Edge ID')['Gamma'].transform('sum')
     merged_df['Gamma_norm'] = merged_df['Gamma'] / merged_df['Gamma_agg']
 
-    # Unione dei conteggi degli edge di partenza e di arrivo
+    # Joining of the start/end edge usage counts 
     edge_counts_df = pd.merge(start_counts, end_counts, on='Edge ID', how='outer').fillna(0)
-
-    # Salvataggio del file con il conteggio dell'uso degli edge
-    # edge_usage_file_path = '/mnt/data/edge_usage_counts.csv'
-    # edge_counts_df.to_csv(edge_usage_file_path, index=False)
 
     """
     # Aggiunta di una colonna ipotetica 'Vehicle Count' con un valore di default
     merged_df['Vehicle Count'] = 100  # Assegniamo un valore predefinito di 100 per simulazione
     """
 
-    # Unione dei conteggi degli edge nel file intermedio
+    # Joining of the edge usage counts in the intermediate file
     merged_df = merged_df.merge(edge_counts_df[['Edge ID', 'Start Count']], 
                                 left_on='Start Edge ID', right_on='Edge ID', how='left').drop(columns='Edge ID')
 
@@ -97,8 +94,6 @@ def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, o
     merged_df['Divided Vehicle Count'] = merged_df['Vehicle Count'] / merged_df['Start Count']
     merged_df['Multiplied Vehicle Count'] = merged_df['Vehicle Count'] * merged_df['End Count']
     """
-
-    # Salvataggio del file aggiornato con le nuove colonne
     csvh.makePath(f'{output_path}/cluster_{cluster_id}')
     updated_intermediate_file_path = f'{output_path}/cluster_{cluster_id}/traffic_flow_data_cluster_{cluster_id}.csv'
     merged_df.to_csv(updated_intermediate_file_path, index=False)
@@ -106,7 +101,7 @@ def generate_intermediate(edges_file_path, traffic_flows_ref_path, cluster_id, o
     print(f"File salvato in {updated_intermediate_file_path}")
     return merged_df
 
-# Funzione per ottenere i dati storici di traffico per ogni giorno
+# Function for getting historic data for each day
 def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, output_path, from_flow_id = None ):
     # read the file
     flows_df = pd.read_csv(f'{flows_path}/output_flows_with_coordinates_cluster_{cluster_id}.csv')
@@ -117,7 +112,6 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     # Define a tomtom processor
     tt_processor = processor.Processor(ttapi)
     historid_csv_handler = csv_handler.CSVHandler()
-    
     
     # If from_flow_id is 'auto', start from the last flow_id processed, which is the last folder in {output_path}/cluster_{cluster_id}/historic/flow_{flow_id}
     from_flow_n = from_flow_id
@@ -175,7 +169,9 @@ def get_historic_data(flows_path, cluster_id, day_range, year, month, slots, out
     print ("All data saved")
     return    
 
-# Funzione per ottenere i dati di traffico a partire dai dati storici
+
+
+#Function for getting traffic data from historic data
 def get_traffic_data(traffic_data_path, cluster_id):
     
     trs = transformer.Transformer()
@@ -247,7 +243,7 @@ def get_aggregated_data(traffic_data_path, cluster_id, slots):
     
     return aggregated_traffic_data
 
-
+# TODO: Unused function - remove if not needed
 def load_aggregated_data(json_file_path):
     # Load the JSON file
     with open(json_file_path, 'r') as json_file:
@@ -291,7 +287,7 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 1800, 5400, 9000],
 
         if flow_id in aggregated_data and slot_index in aggregated_data[flow_id]['avg_number_of_vehicles']:
             avg_number_of_vehicles = aggregated_data[flow_id]['avg_number_of_vehicles'][slot_index]
-            number_of_vehicles = (avg_number_of_vehicles * gamma_norm) / FATTORE_SCALA_VEICOLI  if start_count != 0 else 0
+            number_of_vehicles = (avg_number_of_vehicles * gamma_norm) / Traffic_Scale_Factor  if start_count != 0 else 0
             number_of_vehicles = round(number_of_vehicles)
             
             while True:
@@ -333,7 +329,7 @@ def generate_sumo_routes(cluster_id, slot, begin_values = [0, 1800, 5400, 9000],
 
     print(f"Generated traffic flows saved in traffic_flows_data/cluster_{cluster_id}/{fname}.xml")
 
-
+# TODO:this function is not used - remove if not needed (it is included in the previous function)
 def reorder_routes(xml_file_path):
 
     tree = ET.parse(xml_file_path)
@@ -417,6 +413,16 @@ def select_slots(stdscr):
     return slots
 
 def select_steps(stdscr):
+    """
+    This function is used to select the steps to execute in the traffic flow simulation.
+    It uses the curses library to display a list of steps and allow the user to select them using the arrow keys and space bar.
+
+    Parameters:
+    stdscr (curses.window): The curses window object used for displaying the steps and user input.
+
+    Returns:
+    selected_steps (list): A list of boolean values indicating whether each step is selected or not.
+    """
     curses.curs_set(0)
     stdscr.clear()
     stdscr.refresh()
@@ -457,6 +463,7 @@ def select_steps(stdscr):
             break
 
     return selected_steps
+
 
 selected_steps = curses.wrapper(select_steps)
 
@@ -527,6 +534,6 @@ STEP 6
 Generare i file di traffic flow aggregati per tutti i flussi
 """
 if execute_steps["step6"]:
-    FATTORE_SCALA_VEICOLI = int(input("Enter the vehicle scaling factor for vehicles number (default is 1): ").strip() or 1)
+    Traffic_Scale_Factor = int(input("Enter the vehicle scaling factor for vehicles number (default is 1): ").strip() or 1)
     for slot in slots:
         generate_sumo_routes(cluster_id, slot)

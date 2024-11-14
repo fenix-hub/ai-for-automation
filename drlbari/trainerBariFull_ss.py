@@ -87,7 +87,7 @@ def load_checkpoint(agent, checkpoint_path):
         return None
 
 # Simulation preferences
-clean = False # Clean the checkpoint directory before starting the simulation
+clean = False # If True, clean the chkp directory before starting a new simulation, otherwise starts from last chkp saved
 gui = False # Use the graphical user interface for the simulation
 telegram = True # Use Telegram bot for sending results
 
@@ -116,7 +116,13 @@ def main():
     # Configurazione del percorso
     startEdge = "-30701540"
     endEdge = "-96606441#3"
-    #endEdge = "-25586000#4"
+    
+    # Altre coppie partenza-arrivo
+    # startEdge = '-25655033#8'
+    # endEdge = '-30653669#13'
+
+    # startEdge = '1053386563#1'
+    # endEdge = '108634762#7'
 
     # Register the custom environment with RLlib
     register_env("routeplanner_env", routeplanner_env_creator)
@@ -204,7 +210,7 @@ def main():
             #    _ = agent.save(chkpt_root)
             ### (Q) Perchè sulla base del reward minimo e non del reward medio?
 
-            if result_values["episode_reward_mean"] >= -5:
+            if result_values["episode_reward_mean"] >= -6:
                 _ = agent.save(chkpt_root)
 
     except Exception as e:

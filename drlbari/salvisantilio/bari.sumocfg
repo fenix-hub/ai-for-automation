@@ -9,7 +9,7 @@
         <net-file value="bari1_map.net.xml"/>
         <route-files value="
             random.rou.xml,
-            merged_route_07-10.xml
+            merged_all_routes.xml
             " />
     </input>
 
@@ -18,7 +18,7 @@
     </processing>
 	<time>
 		<begin value="0"/>
-		<end value="32400"/>
+		<end value="68400"/>
 	</time>
     <routing>
         <device.rerouting.adaptation-steps value="18"/>

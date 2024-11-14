@@ -7,7 +7,7 @@ def plot_metrics_from_csv(csv_file):
     df = pd.read_csv(csv_file, index_col=False)
     filename = os.path.basename(csv_file)
 
-    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
     title = "Training : " + filename.split('_')[-1].replace('.csv', '')  # Estrae la parte "YYYYMMDD-HHMMSS"
     fig.suptitle(title, fontsize=12,family='serif')  
     
@@ -49,5 +49,5 @@ def plot_metrics_from_csv(csv_file):
     
 
 # Esempio di utilizzo della funzione:
-results_path = 'training_results_20241101-165748.csv'
+results_path = 'training_results/training_results_20241112-233741.csv'
 plot_metrics_from_csv(results_path)

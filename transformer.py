@@ -13,20 +13,47 @@ class Transformer:
 
     # Calculate traffic data based on route summaries
     def calculateTrafficData(self, historic_data):
+        """
+        Calculate traffic data based on route summaries.
+
+        This function processes historic route data to compute various traffic-related metrics
+        such as free flow speed, traffic speed, density factor, and number of vehicles.
+
+        Parameters:
+        historic_data (pandas.DataFrame): A DataFrame containing historic route summary data.
+            Expected columns:
+            - departureTime: The departure time for each route.
+            - lengthInMeters: The length of the route in meters.
+            - noTrafficTravelTimeInSeconds: Travel time without traffic in seconds.
+            - travelTimeInSeconds: Actual travel time in seconds.
+            - points: Route points data.
+
+        Returns:
+        pandas.DataFrame: A DataFrame containing calculated traffic data for each route, including:
+            - datetime: The departure time.
+            - free_flow_speed: Calculated free flow speed in km/h.
+            - traffic_speed: Calculated traffic speed in km/h.
+            - density_factor: Calculated traffic density factor.
+            - number_of_vehicles: Estimated number of vehicles on the route.
+            - points: Route points data from the input.
+
+        Note:
+        The function displays a progress indicator during computation.
+        """
         route_analysis_df = pd.DataFrame()
-        
+
         for index, summary in historic_data.iterrows():
             clear_output(wait=True)
-            
+
             # Departure time
             datetime = summary['departureTime']
-            
+
             # Get length of road
             length_in_meters = summary['lengthInMeters']
-            # Calculate free flow speed in km/h
-
+            
+            # Calculate free flow speed in km/h (when there is no traffic) 
             if summary['noTrafficTravelTimeInSeconds'] != 0:
-             free_flow_speed = length_in_meters / summary['noTrafficTravelTimeInSeconds'] * 3.6
+             free_flow_speed = length_in_meters / summary['noTrafficTravelTimeInSeconds'] * 3.6 
             else:
              free_flow_speed = float('inf')
 
@@ -34,30 +61,31 @@ class Transformer:
             if summary['travelTimeInSeconds'] != 0:
                traffic_speed = length_in_meters / summary['travelTimeInSeconds'] * 3.6
             else:
-             traffic_speed = 0  # O un altro valore di fallback (ad esempio, una velocità predefinita)
+             traffic_speed = 0  # Or another fallback value
 
             # Calculate traffic density
-            #density_factor = free_flow_speed / traffic_speed
             if traffic_speed != 0:
              density_factor = free_flow_speed / traffic_speed
             else:
-             density_factor = 0  # O un valore di fallback appropriato
+             density_factor = 0  # Or another fallback value
 
             avg_vehicle_length = 4.6
-            
+
             # https://www.amsi.org.au/teacher_modules/pdfs/Maths_delivers/Braking5.pdf
             breaking_distance = (traffic_speed ** 2) / 20 # b = m/s 
-            
-            # The number of vehicles is calculated as the traffic density * length of road divided by the average length of vehicles and recommended breaking distance
+
+            # The number of vehicles is calculated as the traffic density * length of road 
+            # divided by the average length of vehicles and recommended breaking distance
             vehicles = round(density_factor * length_in_meters / avg_vehicle_length)
-            
+
             results = {"datetime": datetime, "free_flow_speed": free_flow_speed, "traffic_speed": traffic_speed, "density_factor": density_factor, "number_of_vehicles": vehicles, "points": summary['points']}
-            
+
             # Convert to data frame and append
             route_analysis_df = pd.concat([route_analysis_df, pd.json_normalize(results)], ignore_index=True)
             print(f"Computing traffic: { round((index+1) / len(historic_data) * 100) }% >> {datetime}")
-        
+
         return route_analysis_df
+
 
 
 
