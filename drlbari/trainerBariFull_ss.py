@@ -55,12 +55,12 @@ class CustomPPOConfig(PPOConfig):
 
         # Add other PPO-specific settings here if needed
         # For example:
-        self.lr = 0.0003  # Adjust the learning rate
+        self.lr = 0.0001  # Adjust the learning rate
         self.train_batch_size = 4000
         self.sgd_minibatch_size = 128
         self.num_sgd_iter = 10
         self.clip_param = 0.2
-        self.entropy_coeff = 0.01
+        self.entropy_coeff = 0.02
         self.num_rollout_workers = 0
         # if use_gpu:
         #     print(f"CUDA is available. Number of GPUs: {torch.cuda.device_count()}")
@@ -210,7 +210,7 @@ def main():
             #    _ = agent.save(chkpt_root)
             ### (Q) Perchè sulla base del reward minimo e non del reward medio?
 
-            if result_values["episode_reward_mean"] >= -6:
+            if result_values["episode_reward_mean"] >= 8:
                 _ = agent.save(chkpt_root)
 
     except Exception as e:
