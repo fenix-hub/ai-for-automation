@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-<vType id="vType_0" vClass="passenger" maxSpeed="20" decel="20" color="255,255,0" length="0.5"/>
-<vType id="routeByDistance" maxSpeed="1" color="0,255,255"/>
-<route id="r_0" edges=" 24884052#0"  />
-</routes>

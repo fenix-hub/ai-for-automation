@@ -48,9 +48,9 @@ class Routeplanner(gym.Env):
     # REWARD_ARRIVING=20
 
     #Best route
-    REWARD_DISTANCE_LESS = 0.5 #1
-    REWARD_DISTANCE_MORE = -0.5 #-1
-    TRUNCATE_EPISODE_VALUE= 70 #50
+    REWARD_DISTANCE_LESS = 0.5 
+    REWARD_DISTANCE_MORE = -0.5
+    TRUNCATE_EPISODE_VALUE= 70 
     REWARD_ARRIVING= 5 #2
     REWARD_CURVE = 0
     TRAFFIC_PENALTY = 0.2 
@@ -141,9 +141,9 @@ class Routeplanner(gym.Env):
 
         # Observation space includes the road index (discrete) and normalized time (continuous)
         self.observation_space = gym.spaces.Tuple((
-           gym.spaces.Discrete(len(self.edges)),  # Road index (discrete)
-           gym.spaces.Box(low=0, high=3, shape=(1,), dtype=np.uint8),      # Traffic slot: 0 (no traffic), 1 (morning), 2 (afternoon), 3 (evening)
-           gym.spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)  # Normalized time (continuous between 0 and 1)
+           gym.spaces.Discrete(len(self.edges)), #Road index (discrete)
+           gym.spaces.Box(low=0, high=3, shape=(1,), dtype=np.uint8), #Traffic slot: 0 (no traffic), 1 (morning), 2 (afternoon), 3 (evening)
+           gym.spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32) #Normalized time (continuous between 0 and 1)
         ))
 
         # aggiungi veicolo
@@ -427,15 +427,15 @@ class Routeplanner(gym.Env):
 
 
     def addRewardTrafficDensity(self):
-    # ottiene il numero di veicoli sulla strada corrente
+    # TraCI API for obtaining the current road number of vehicles
         vehicle_count = self.trEnv.edge.getLastStepVehicleNumber(self.current_road)
 
-        if vehicle_count >= self.TRAFFIC_IDX:  # indice di traffico elevato
-            # reward di penalizzazione proporzionale alla quantità di traffico
+        if vehicle_count >= self.TRAFFIC_IDX:  # High traffic index
+            # Negative reward proportional to vehicle count
             self.reward -= self.TRAFFIC_PENALTY * vehicle_count
             print(f"HIGH TRAFFIC - density: {vehicle_count}, penalty reward: -{self.TRAFFIC_PENALTY * vehicle_count}")    
         else:
-            self.reward += self.NO_TRAFFIC_REWARD  # ricompensa per traffico basso
+            self.reward += self.NO_TRAFFIC_REWARD  # Low traffic reward
             #print('Traffic density low, reward applied')
 
 

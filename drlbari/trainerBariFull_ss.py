@@ -210,7 +210,7 @@ def main():
             #    _ = agent.save(chkpt_root)
             ### (Q) Perchè sulla base del reward minimo e non del reward medio?
 
-            if result_values["episode_reward_mean"] >= 8:
+            if result_values["episode_reward_mean"] >= 12: 
                 _ = agent.save(chkpt_root)
 
     except Exception as e:
