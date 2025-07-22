@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2023-06-19 19:05:41 by Eclipse SUMO sumo Version 1.17.0
+-->
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="bari1_map.net.xml"/>
+        <route-files value="
+            random.rou.xml,
+            merged_all_routes.xml
+            " />
+    </input>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+    </processing>
+	<time>
+		<begin value="0"/>
+		<end value="68400"/>
+	</time>
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+
+</configuration>
+
+<!-- ,
+            cluster_1/route_07-00_10-00.xml,
+            cluster_2/route_07-00_10-00.xml, 
+            cluster_3/route_07-00_10-00.xml,
+            cluster_4/route_07-00_10-00.xml, 
+            cluster_5/route_07-00_10-00.xml, 
+            cluster_6/route_07-00_10-00.xml -->

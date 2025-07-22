@@ -1,0 +1,238 @@
+import os, sys, logging, ray
+from ray.rllib.algorithms import ppo
+import drlclass.routeplannerfull_ss
+import shutil
+import csv
+import datetime
+from ray.rllib.algorithms.ppo import PPOConfig
+from ray.tune.registry import register_env
+import requests
+import TelegramBot as tg
+import tensorflow as tf
+sys.setrecursionlimit(100000)
+
+if 'SUMO_HOME' in os.environ:
+    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+else:
+    sys.exit("please declare environment variable 'SUMO_HOME'")
+
+osPlattform = sys.platform
+
+if str(osPlattform) == "Linux":
+    sumoBinary = os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo-gui')
+else:
+    sumoBinary = os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo-gui.exe')
+
+logger = logging.getLogger(__name__)
+
+
+# First, we register the environment as usual
+def routeplanner_env_creator(env_config):
+    return drlclass.routeplannerfull_ss.Routeplanner(env_config)
+
+# Custom AlgorithmConfig class for PPO
+class CustomPPOConfig(PPOConfig):
+    def __init__(self, lstPointsRoute, folder, pathRouteFile, pathNetFile, pathConfigFile, startEdge, endEdge, gui):
+        super().__init__()
+        # Set the environment to the registered one
+        self.environment(
+            "routeplanner_env",
+            env_config = {
+                "lstPoints": lstPointsRoute,
+                "flagPriorityReward": False,
+                "folder":folder,
+                "pathRouteFile": pathRouteFile,
+                "pathNetFile": pathNetFile,
+                "pathConfigFile": pathConfigFile,
+                "startEdge": startEdge,
+                "endEdge": endEdge,
+                "gui": gui
+            }
+        )
+
+        # Algorithm-specific settings for PPO
+        #self.framework("tf")  # Use PyTorch as the backend if commented, you can switch to "tf" for TensorFlow if needed, comment out if you prefer TensorFlow
+
+        # Add other PPO-specific settings here if needed
+        # For example:
+        self.lr = 0.0001  # Adjust the learning rate
+        self.train_batch_size = 4000
+        self.sgd_minibatch_size = 128
+        self.num_sgd_iter = 10
+        self.clip_param = 0.2
+        self.entropy_coeff = 0.02
+        self.num_rollout_workers = 0
+        # if use_gpu:
+        #     print(f"CUDA is available. Number of GPUs: {torch.cuda.device_count()}")
+        #     print("GPU Name:", torch.cuda.get_device_name(0))
+        #     ray.init(num_gpus=1)
+        # else:
+        
+        #     print("CUDA is not available. Running on CPU.")
+        #     ray.init()
+        # self.num_gpus = 0
+        # self.num_gpus_per_worker = 0
+
+
+# Function to check if a checkpoint exists, then return the checkpoint file
+def load_checkpoint(agent, checkpoint_path):
+    if os.path.exists(checkpoint_path):
+        print(f"Loading checkpoint from {checkpoint_path}")
+        agent.restore(checkpoint_path)
+        # extract the checkpoint file name
+        checkpoint_files = os.listdir(checkpoint_path)
+        return checkpoint_files[0] if checkpoint_files else None
+    else:
+        print("Checkpoint file path does not exist, starting fresh.")
+        return None
+
+# Simulation preferences
+clean = False # If True, clean the chkp directory before starting a new simulation, otherwise starts from last chkp saved
+gui = False # Use the graphical user interface for the simulation
+telegram = True # Use Telegram bot for sending results
+
+def main():
+    # Directory checkpoint
+    chkpt_root = "drl_model_sumo_full"
+
+    if clean:
+        shutil.rmtree(chkpt_root, ignore_errors=True, onerror=None)
+
+        # Directory risultati Ray
+        ray_results = "{}/ray_results/".format(os.getenv("HOME"))
+        shutil.rmtree(ray_results, ignore_errors=True, onerror=None)
+
+    # Inizializza Ray
+    ray.init(ignore_reinit_error=True)
+
+    # Invia un messaggio di avvio della simulazione
+    start_message = "Simulazione avviata!"
+    if telegram:
+        tg.invia_risultati_via_telegram('856246078', start_message) #L_chatID
+        tg.invia_risultati_via_telegram('282689837', start_message) #N_chatID
+
+    lstPointsRoute = []
+
+    # Configurazione del percorso
+    startEdge = "-30701540"
+    endEdge = "-96606441#3"
+    
+    # Altre coppie partenza-arrivo
+    # startEdge = '-25655033#8'
+    # endEdge = '-30653669#13'
+
+    # startEdge = '1053386563#1'
+    # endEdge = '108634762#7'
+
+    # Register the custom environment with RLlib
+    register_env("routeplanner_env", routeplanner_env_creator)
+
+    # Create a config instance
+    config = CustomPPOConfig(
+        lstPointsRoute=lstPointsRoute,
+        folder="salvisantilio",
+        pathRouteFile="random.rou.xml",
+        pathNetFile="bari1_map.net.xml",
+        pathConfigFile="bari.sumocfg",
+        startEdge=startEdge,
+        endEdge=endEdge,
+        gui = gui
+    )
+
+    # Build the PPO agent from the config
+    agent = config.build()
+
+    # Load the checkpoint if it exists
+    chkpt_file = load_checkpoint(agent, chkpt_root)
+
+    status = "{:2d} reward {:6.2f}/{:6.2f}/{:6.2f} len {:4.2f} saved {}"
+
+    i = 0
+    j = 5
+    ct = datetime.datetime.now()
+    print("current time:-", ct)
+
+    # CSV file configuration
+    fields = ['Episode', 'Reward Min', 'Reward Mean', 'Reward Max', 'Episode Length', 'Timestamp', 'Checkpoint']
+    csv_file = f'training_results_{ct.strftime("%Y%m%d-%H%M%S")}.csv'
+    results_path = "training_results/" + csv_file
+
+    # Scrivi l'intestazione del CSV
+    with open(results_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(fields)
+    try:
+        while True:
+            result = agent.train()
+            i += 1
+
+            result_values = result if ray.__version__ < "2.37.0" else result["env_runners"]
+
+            # Scrittura nel file CSV
+            with open(results_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([
+                    i,
+                    result_values["episode_reward_min"],
+                    result_values["episode_reward_mean"],
+                    result_values["episode_reward_max"],
+                    result_values["episode_len_mean"],
+                    datetime.datetime.fromtimestamp(result["timestamp"]),
+                    chkpt_file
+                ])
+
+            # Stampa i risultati
+            print(status.format(
+                i,
+                result_values["episode_reward_min"],
+                result_values["episode_reward_mean"],
+                result_values["episode_reward_max"],
+                result_values["episode_len_mean"],
+                datetime.datetime.fromtimestamp(result["timestamp"]),
+                chkpt_file
+            ))
+
+            current_timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            telegram_message = (
+            f"Episode: {i}\n"
+            f"Reward Min: {result_values['episode_reward_min']:.2f}\n"
+            f"Reward Mean: {result_values['episode_reward_mean']:.2f}\n"
+            f"Reward Max: {result_values['episode_reward_max']:.2f}\n"
+            f"Episode Length: {result_values['episode_len_mean']:.2f}\n"
+            f"Timestamp: {current_timestamp}")
+            
+            if telegram:
+                tg.invia_risultati_via_telegram('856246078',telegram_message)
+                tg.invia_risultati_via_telegram('282689837',telegram_message)
+            
+            # Save the checkpoint if reward min exceeds threshold
+            # if result["episode_reward_min"] >= -5:
+            #    _ = agent.save(chkpt_root)
+            ### (Q) Perchè sulla base del reward minimo e non del reward medio?
+
+            if result_values["episode_reward_mean"] >= 12: 
+                _ = agent.save(chkpt_root)
+
+    except Exception as e:
+            error_message = f"Errore durante la simulazione: {str(e)}"
+            if telegram:
+                tg.invia_risultati_via_telegram('856246078', error_message)
+                tg.invia_risultati_via_telegram('282689837', error_message)
+                tg.invia_file_csv_via_telegram('856246078',results_path)
+                tg.invia_file_csv_via_telegram('282689837',results_path)
+            print(error_message)
+    finally:
+        # Invia un messaggio di chiusura della simulazione
+        end_message = "Simulazione interrotta."
+        if telegram:
+            tg.invia_risultati_via_telegram('856246078', end_message)
+            tg.invia_risultati_via_telegram('282689837', end_message)
+            tg.invia_file_csv_via_telegram('856246078',results_path)
+            tg.invia_file_csv_via_telegram('282689837',results_path)
+        agent.stop()
+        ct = datetime.datetime.now()
+        print("current time:-", ct)
+
+
+if __name__ == "__main__":
+    main()
