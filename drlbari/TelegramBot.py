@@ -3,7 +3,7 @@ from telegram.ext import Application
 import asyncio
 
 # Token API del bot
-bot_token = '7033631161:AAHEHy8r0bdNXAvaYNW-k-vMFjq68XG0A5Q'
+bot_token = ''
 # Bot Link: https://t.me/AIxAut_training_bot
 
 async def send_telegram_message(chat_id, message):
